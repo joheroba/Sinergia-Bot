@@ -1,0 +1,33 @@
+2026/04/04-21:34:27.874 4708 Reusing MANIFEST C:\GanoiTouch\playwright_whatsapp\Default\Local Storage\leveldb/MANIFEST-000001
+2026/04/04-21:34:27.914 4708 Recovering log #3
+2026/04/04-21:34:27.921 4708 Reusing old log C:\GanoiTouch\playwright_whatsapp\Default\Local Storage\leveldb/000003.log 
+2026/04/04-22:09:30.111 320c Level-0 table #5: started
+2026/04/04-22:09:30.124 320c Level-0 table #5: 18429 bytes OK
+2026/04/04-22:09:30.128 320c Delete type=0 #3
+2026/04/04-23:28:30.037 320c Level-0 table #7: started
+2026/04/04-23:28:30.046 320c Level-0 table #7: 13404 bytes OK
+2026/04/04-23:28:30.050 320c Delete type=0 #4
+2026/04/05-00:51:29.974 320c Level-0 table #9: started
+2026/04/05-00:51:29.984 320c Level-0 table #9: 13244 bytes OK
+2026/04/05-00:51:29.987 320c Delete type=0 #6
+2026/04/05-02:41:29.860 320c Level-0 table #11: started
+2026/04/05-02:41:29.870 320c Level-0 table #11: 11547 bytes OK
+2026/04/05-02:41:29.874 320c Delete type=0 #8
+2026/04/05-04:37:29.772 320c Level-0 table #13: started
+2026/04/05-04:37:29.783 320c Level-0 table #13: 10950 bytes OK
+2026/04/05-04:37:29.787 320c Delete type=0 #10
+2026/04/05-06:27:29.669 4708 Level-0 table #15: started
+2026/04/05-06:27:29.684 4708 Level-0 table #15: 11557 bytes OK
+2026/04/05-06:27:29.688 4708 Delete type=0 #12
+2026/04/05-06:27:29.690 4708 Compacting 4@0 + 1@1 files
+2026/04/05-06:27:29.736 4708 Generated table #16@0: 20 keys, 2131 bytes
+2026/04/05-06:27:29.736 4708 Compacted 4@0 + 1@1 files => 2131 bytes
+2026/04/05-06:27:29.737 4708 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/05-06:27:29.740 4708 Delete type=2 #7
+2026/04/05-06:27:29.740 4708 Delete type=2 #9
+2026/04/05-06:27:29.740 4708 Delete type=2 #11
+2026/04/05-06:27:29.740 4708 Delete type=2 #13
+2026/04/05-06:27:29.741 4708 Delete type=2 #15
+2026/04/05-08:19:29.557 320c Level-0 table #18: started
+2026/04/05-08:19:29.567 320c Level-0 table #18: 11703 bytes OK
+2026/04/05-08:19:29.570 320c Delete type=0 #14

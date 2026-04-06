@@ -1,0 +1,164 @@
+import os
+import random
+import textwrap
+from datetime import datetime
+from PIL import Image, ImageDraw, ImageFont, ImageOps
+
+# Hooks y Base
+HOOKS_SALUD = [
+    "No es magia, es nutrición celular.\nEmpieza el día con Ganoderma.",
+    "Refuerza tus defensas de forma\nnatural y conquista tu rutina diaria.",
+    "¿Fatiga a media tarde? Eleva tu\nvitalidad mental sin azúcar añadida.",
+    "Si cuidas el motor de tu carro,\n¿por qué no hidratas tu sistema inmune?",
+    "Más energía, menos estrés.\nEl aliado diario de los que no se detienen.",
+    "Sabor intenso. 100% equilibrio orgánico.\nDale a tu cuerpo lo que exige.",
+    "Cambia la cafeína común por\nvitalidad funcional. Siente la diferencia."
+]
+
+HOOKS_NEGOCIO = [
+    "¿Y si tu bebida de cada mañana\ncomenzara a pagarte grandes dividendos?",
+    "Construye autonomía financiera\nrepartiendo bienestar al mundo.",
+    "El negocio perfecto existe:\nAquel que haces mientras ayudas a otros.",
+    "De empleado a diseñador de vida.\nConstruye tu propio pilar en Network Marketing.",
+    "Tus redes sociales no deben quitarte\ntiempo. Deben generar ingresos residuales.",
+    "Apoyando una línea de talla mundial.\nLa oportunidad Gano iTouch.",
+    "Un emprendimiento sólido desde\ntu hogar. Descubre cómo ser socio directo."
+]
+
+def dibujar_word_wrap(draw, texto_largo, fuente, x_caja, y_caja, ancho_caja, alto_caja):
+    """Calcula los saltos de línea matemáticamente para que nada se salga por el borde derecho/izquierdo."""
+    # Modulador seguro de cantidad de letras (approx 34 letras para nuestro font size)
+    caracteres_maximos = int(ancho_caja / 30) 
+    
+    # Limpiamos el texto original (quitamos \n de prueba) y lo envolvemos
+    texto_limpio = texto_largo.replace('\n', ' ')
+    lineas = textwrap.wrap(texto_limpio, width=caracteres_maximos)
+    
+    # Calcular centro 'Y' para que todo el párrafo flote al medio
+    interlineado = 85
+    y_text = y_caja + (alto_caja // 2) - (len(lineas) * interlineado // 2)
+    
+    for linea in lineas:
+        bbox = draw.textbbox((0, 0), linea, font=fuente)
+        ancho_linea = bbox[2] - bbox[0]
+        x_alineado = x_caja + (ancho_caja - ancho_linea) / 2
+        
+        # Efecto Parallax en las letras (Sombra Negra dura de contraste)
+        draw.text((x_alineado + 5, y_text + 5), linea, font=fuente, fill=(0, 0, 0, 200))
+        # Frontal Inmaculado White
+        draw.text((x_alineado, y_text), linea, font=fuente, fill=(255, 255, 255))
+        y_text += interlineado
+
+def crear_tarjeta_viral(texto, categoria, index):
+    ancho, alto = 1080, 1080
+    
+    # 1. MONTAR FOTOGRAFÍA FÍSICA A LA PANTALLA
+    carpeta_assets = "assets_oficiales"
+    try:
+        # Busca todas las fotos que el Scrapper bajó
+        fotos = [f for f in os.listdir(carpeta_assets) if f.endswith(('.jpg', '.png', '.jpeg'))]
+        if fotos:
+            img_ruta = os.path.join(carpeta_assets, random.choice(fotos))
+            fondo_base = Image.open(img_ruta).convert('RGBA')
+            # Crop Inteligente a cuadrado de Instagram 1:1 sin deformar
+            img = ImageOps.fit(fondo_base, (ancho, alto), method=Image.Resampling.LANCZOS)
+        else:
+            raise Exception("Carpeta Vacía")
+    except:
+        # Backup Background en caso alguien elimine las fotos
+        img = Image.new('RGBA', (ancho, alto), (54, 25, 11, 255))
+
+    draw = ImageDraw.Draw(img, 'RGBA')
+    
+    # Fuentes Premium High-Res
+    fuentes_elegantes = ["seguibl.ttf", "calibrib.ttf", "trebucbd.ttf", "arialbd.ttf"]
+    fuente = fuente_logo = None
+    for f in fuentes_elegantes:
+        try:
+            fuente = ImageFont.truetype(f, 65)
+            fuente_logo = ImageFont.truetype(f, 32)
+            break
+        except IOError:
+            continue
+    if not fuente:
+        fuente = fuente_logo = ImageFont.load_default()
+
+    # 2. ALTERNAR CEREBROS DE DISEÑO ENTRE MINIMALISTA MASCULINO Y GLASS CORPORATE
+    estilo = random.choice(["DISENO_ROLEX", "DISENO_CRISTAL"])
+    
+    if estilo == "DISENO_ROLEX":
+        # Apagón General: Filtro humo oscuro al 60% sobre TODA la caja para exaltar la tipografía
+        draw.rectangle([(0,0), (ancho, alto)], fill=(10, 10, 10, 170))
+        dibujar_word_wrap(draw, texto, fuente, 80, 0, ancho-160, alto - 100)
+    else:
+        # Modo Cristal: Fondo iluminado y letras dentro del recuadro transparente en medio
+        padding = 70
+        caja_ancho = ancho - (padding * 2)
+        caja_alto = 450
+        y_caja = (alto - caja_alto) // 2 - 50
+        
+        # Placa Glass
+        draw.rounded_rectangle(
+            [(padding, y_caja), (ancho - padding, y_caja + caja_alto)],
+            radius=20, fill=(0, 0, 0, 160), outline=(255, 215, 0, 200), width=5
+        )
+        draw.ellipse([(ancho//2 - 15, y_caja - 30), (ancho//2 + 15, y_caja)], fill=(255, 215, 0))
+        dibujar_word_wrap(draw, texto, fuente, padding + 20, y_caja, caja_ancho - 40, caja_alto)
+
+    # 3. FIRMA CORPORATIVA Y LOGO DEL DISTRIBUIDOR (Watermark Superior)
+    
+    # Motor de Incrustación de Logo Oficial
+    ruta_logo = "logo_distribuidor.png"
+    if os.path.exists(ruta_logo):
+        try:
+            logo_img = Image.open(ruta_logo).convert("RGBA")
+            # Escalar estéticamente para que no abrume el arte (200x200 max)
+            logo_img.thumbnail((220, 220), Image.Resampling.LANCZOS)
+            
+            # UBICACIÓN: Esquina Superior Derecha (como un escudo oficial de canal)
+            pos_x = ancho - logo_img.width - 40
+            pos_y = 40
+            
+            # Pegar respetando el canal Alfa (transparencia de tu logo para no sobreponer fondos blancos)
+            img.paste(logo_img, (pos_x, pos_y), logo_img)
+        except Exception as d:
+            print(f"Alerta: El logo oficial se encontró pero no pudo inyectarse ({d})")
+
+    # Pie de Página Base
+    draw.line([(0, 1020), (ancho, 1020)], fill=(255, 215, 0, 255), width=5)
+    bbox_logo = draw.textbbox((0, 0), "Gano iTouch Oficial • Red de Mercadeo • Bienestar", font=fuente_logo)
+    x_logo = (ancho - (bbox_logo[2] - bbox_logo[0])) / 2
+    # Fondo solido diminuto en la base
+    draw.rectangle([(0, 1020), (ancho, alto)], fill=(15, 15, 15, 255))
+    draw.text((x_logo, 1035), "Gano iTouch Oficial • Red de Mercadeo • Bienestar", font=fuente_logo, fill=(240, 240, 240))
+
+    # EXPORTACIÓN GIGANTE (Calidad 98 sobre 100)
+    hoy = datetime.now().strftime("%Y%m%d%H%M%S")
+    carpeta_destino = os.path.join("imagenes", categoria)
+    os.makedirs(carpeta_destino, exist_ok=True)
+    ruta = os.path.join(carpeta_destino, f"hq_dynamic_post_{hoy}_{index}.jpg")
+    
+    img_final = img.convert("RGB")
+    img_final.save(ruta, quality=98)
+    return ruta
+
+def arrancar_la_fabrica():
+    print("==================================================")
+    print("  SINERGIA AUTO-CREATOR (FABRICA DE CONTENIDOS)   ")
+    print("==================================================\n")
+    print("Generando material de Salud Inmunológica (Anti-Baneo Facebook)...")
+    
+    for idx, gancho_salud in enumerate(HOOKS_SALUD):
+        ruta = crear_tarjeta_viral(gancho_salud, "salud", idx)
+        print(f" [✓] Gráfico Salud creado: {ruta}")
+        
+    print("\nGenerando material de Libertad Financiera (Network Marketing)...")
+    for idx, gancho_negocio in enumerate(HOOKS_NEGOCIO):
+        ruta = crear_tarjeta_viral(gancho_negocio, "negocio", idx)
+        print(f" [✓] Gráfico Negocio creado: {ruta}")
+        
+    print("\n[ÉXITO] ¡14 Nuevos Archivos Publicitarios inyectados en la base rotaiva!")
+    print("Ahora Sinergia Bot (publisher.py) los agarrará y programará sin que muevas un dedo.")
+
+if __name__ == "__main__":
+    arrancar_la_fabrica()

@@ -1,0 +1,18 @@
+# Secretos Entorno Local
+.env
+playwright_profile/
+
+# Archivos pesados extraídos
+*.mp4
+*.pptx
+*.zip
+temp_ppt/
+temp_ppt_unzipped/
+
+# Archivos Python basura
+__pycache__/
+*.pyc
+
+# Data temporal de Meta y Bot
+historial_multimedia.json
+fallo_imagen_*.png
