@@ -71,30 +71,30 @@ def crear_tarjeta_viral(texto, categoria, index):
         if not fotos_grandes:
             raise Exception("No hay fotos grandes en assets_oficiales")
             
-        # Selección inteligente por categoría:
+        # Selección inteligente por categoría para garantizar variedad (Anti-Baneo y mayor conversión)
         foto_elegida = None
         if categoria == "salud":
-            # Prioridad 1: Imagen Premium de Salud cocreada con IA
-            if "gano_lucidum_health.png" in fotos_grandes:
-                foto_elegida = "gano_lucidum_health.png"
+            # Obtener productos de salud específicos (3en1, cafe negro, chocolate, cereal, pasta dental, etc.)
+            productos_salud = [f for f in fotos_grandes if f.startswith("producto_") and "jabon" not in f]
+            if productos_salud:
+                foto_elegida = productos_salud[index % len(productos_salud)]
             else:
-                # Prioridad 2: Archivos que contengan palabras afines
+                # Fallback de salud
                 afines = [f for f in fotos_grandes if any(k in f.lower() for k in ["health", "salud", "cafe", "coffee", "nutri", "lucidum"])]
                 if afines:
-                    foto_elegida = random.choice(afines)
+                    foto_elegida = afines[index % len(afines)]
         else: # negocio
-            # Prioridad 1: Imagen Premium de Negocio cocreada con IA
-            if "gano_business_gold.png" in fotos_grandes:
-                foto_elegida = "gano_business_gold.png"
+            # Obtener infografías de negocio, plan servilleta o fotos corporativas
+            fotos_negocio = [f for f in fotos_grandes if any(k in f.lower() for k in ["business", "plan_", "onetoone", "mr_leow", "pioir", "negocio", "gold", "jabon"])]
+            if fotos_negocio:
+                foto_elegida = fotos_negocio[index % len(fotos_negocio)]
             else:
-                # Prioridad 2: Archivos que contengan palabras afines
-                afines = [f for f in fotos_grandes if any(k in f.lower() for k in ["business", "negocio", "gold", "oro", "corpo", "money", "finan"])]
-                if afines:
-                    foto_elegida = random.choice(afines)
+                if "gano_business_gold.png" in fotos_grandes:
+                    foto_elegida = "gano_business_gold.png"
                     
-        # Fallback 3: Si no hay específicos, elegir cualquiera de los grandes de forma aleatoria
+        # Fallback 3: Si no hay específicos, elegir secuencialmente de las fotos grandes
         if not foto_elegida:
-            foto_elegida = random.choice(fotos_grandes)
+            foto_elegida = fotos_grandes[index % len(fotos_grandes)]
             
         img_ruta = os.path.join(carpeta_assets, foto_elegida)
         print(f">> [Fábrica Visual] Seleccionada imagen premium: {img_ruta} ({os.path.getsize(img_ruta)//1024} KB)")

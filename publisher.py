@@ -21,7 +21,7 @@ if os.name == "posix" and "DISPLAY" not in os.environ:
 
 JSON_PATH = "contenido_ganoderma.json"
 USER_DATA_DIR = "./playwright_profile"
-LOGO_PATH = "imagenes/logo_autorizado.png"
+LOGO_PATH = "logo_distribuidor.png"
 
 async def cargar_contenido():
     if not os.path.exists(JSON_PATH):
