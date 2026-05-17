@@ -330,7 +330,19 @@ async def procesar_publicacion_inmediata(post_id, message_id, chat_id):
         )
         await notifications.editar_mensaje(message_id, caption_exito, {"inline_keyboard": []}, chat_id=chat_id)
     else:
-        await notifications.enviar_alerta("❌ <b>ERROR:</b> No se pudo publicar. Entra a tu monitor VNC para revisar si Facebook te pidió clave.", chat_id=chat_id)
+        error_img = f"error_{post_id}.png"
+        if os.path.exists(error_img):
+            await notifications.enviar_foto_interactiva(
+                foto_path=error_img,
+                caption=f"❌ <b>ERROR DE PUBLICACIÓN:</b> No se pudo concretar en Meta.\n\nAquí tienes la captura de pantalla de lo que vio el bot en noVNC para diagnosticar el problema.",
+                chat_id=chat_id
+            )
+            try:
+                os.remove(error_img) # Limpiar después de enviar
+            except Exception:
+                pass
+        else:
+            await notifications.enviar_alerta("❌ <b>ERROR:</b> No se pudo publicar. Entra a tu monitor VNC para revisar si Facebook te pidió clave.", chat_id=chat_id)
 
 async def manejar_callback(callback):
     """Procesa los toques en los botones interactivos."""
