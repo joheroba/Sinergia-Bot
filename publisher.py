@@ -14,6 +14,10 @@ import notifications
 # Cargar variables de entorno
 load_dotenv()
 
+# Configuración automática de Display para servidores Linux sin monitor físico (noVNC)
+if os.name == "posix" and "DISPLAY" not in os.environ:
+    os.environ["DISPLAY"] = ":99"
+
 JSON_PATH = "contenido_ganoderma.json"
 USER_DATA_DIR = "./playwright_profile"
 LOGO_PATH = "imagenes/logo_autorizado.png"

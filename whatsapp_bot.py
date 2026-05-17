@@ -10,6 +10,10 @@ import ai_agent
 
 load_dotenv()
 
+# Configuración automática de Display para servidores Linux sin monitor físico (noVNC)
+if os.name == "posix" and "DISPLAY" not in os.environ:
+    os.environ["DISPLAY"] = ":99"
+
 # Carpeta de cookies independiente para que tu Facebook siga funcionando tranquilo
 # en su propia dimensión, y WhatsApp se aloje pacíficamente aquí.
 WP_DATA_DIR = "./playwright_whatsapp"
