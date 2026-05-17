@@ -555,10 +555,10 @@
                                                     <div>
                                                         <div class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Dirección USDT (Red BEP20)</div>
                                                         <div class="flex gap-1.5 items-center bg-black/50 border border-[#f3ba2f]/20 rounded-lg p-1.5">
-                                                            <span class="text-[10px] font-mono text-gray-300 break-all select-all flex-1">0x71C7656EC7ab88b098defB751B7401B5f6d8976F</span>
+                                                            <span class="text-[10px] font-mono text-gray-300 break-all select-all flex-1">0xc7915507ea9879809a97f12426ad3011b07f7302</span>
                                                             <button 
                                                                 onClick={() => {
-                                                                    navigator.clipboard.writeText("0x71C7656EC7ab88b098defB751B7401B5f6d8976F");
+                                                                    navigator.clipboard.writeText("0xc7915507ea9879809a97f12426ad3011b07f7302");
                                                                     setCopiedAddress(true);
                                                                     setTimeout(() => setCopiedAddress(false), 2000);
                                                                 }}
@@ -570,7 +570,6 @@
                                                         </div>
                                                         {copiedAddress && <span class="text-[9px] text-green-400 font-bold mt-0.5 block">✓ ¡Copiado con éxito!</span>}
                                                     </div>
-
                                                     <div>
                                                         <div class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Binance Pay ID (Cero comisiones)</div>
                                                         <div class="flex gap-1.5 items-center bg-black/50 border border-[#f3ba2f]/20 rounded-lg p-1.5">
@@ -632,19 +631,14 @@
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div class="bg-[#1b1511]/90 backdrop-blur-sm p-6 rounded-2xl shadow-2xl max-w-[260px] w-full border-4 border-[#f3ba2f]/40 text-center relative overflow-hidden flex flex-col items-center">
-                                                <div class="w-16 h-16 bg-gradient-to-tr from-[#f3ba2f]/10 to-[#f3ba2f]/30 rounded-full flex items-center justify-center border border-[#f3ba2f]/40 shadow-xl mb-3 relative">
-                                                    <i data-lucide="coins" class="w-8 h-8 text-[#f3ba2f] animate-pulse"></i>
-                                                    <span class="absolute -top-1 -right-1 bg-green-500 text-black text-[8px] font-black px-1 py-0.5 rounded-full uppercase tracking-widest">
-                                                        USDT
-                                                    </span>
-                                                </div>
-                                                <div class="text-[#f3ba2f] font-black text-base tracking-wide uppercase">Binance Pay</div>
-                                                <p class="text-gray-300 text-[10px] mt-2 leading-relaxed">
-                                                    Envía exactamente <span class="text-white font-extrabold text-xs">$8.00 USDT</span>. Aceptamos redes BEP20 y Binance Pay ID.
-                                                </p>
-                                                <div class="text-center text-[9px] text-gray-500 font-extrabold mt-4 select-none uppercase tracking-wider border-t border-gray-800 pt-2 w-full">
-                                                    Jorge Hector Rodriguez Bazalar
+                                            <div class="bg-white p-3 rounded-2xl shadow-2xl max-w-[260px] border-4 border-[#f3ba2f]/60 relative overflow-hidden group">
+                                                <img 
+                                                    src="assets_oficiales/usdt_qr.png" 
+                                                    alt="Código QR de USDT BEP20 - Jorge Rodríguez" 
+                                                    class="w-full h-auto rounded-xl select-none"
+                                                />
+                                                <div class="text-center text-[10px] text-gray-800 font-extrabold mt-2 select-none uppercase tracking-wider">
+                                                    USDT BNB Smart Chain (BEP20)
                                                 </div>
                                             </div>
                                         )}
