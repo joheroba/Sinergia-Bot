@@ -84,8 +84,8 @@ def crear_tarjeta_viral(texto, categoria, index):
                 if afines:
                     foto_elegida = afines[index % len(afines)]
         else: # negocio
-            # Obtener infografías de negocio, plan servilleta o fotos corporativas
-            fotos_negocio = [f for f in fotos_grandes if any(k in f.lower() for k in ["business", "plan_", "onetoone", "mr_leow", "pioir", "negocio", "gold", "jabon"])]
+            # Obtener infografías de negocio, plan servilleta, fotos corporativas y láminas del plan oficial
+            fotos_negocio = [f for f in fotos_grandes if any(k in f.lower() for k in ["business", "plan_", "onetoone", "mr_leow", "pioir", "negocio", "gold", "jabon", "image", "captura"])]
             if fotos_negocio:
                 foto_elegida = fotos_negocio[index % len(fotos_negocio)]
             else:
