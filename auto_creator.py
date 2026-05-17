@@ -197,12 +197,12 @@ def arrancar_la_fabrica():
     
     for idx, gancho_salud in enumerate(HOOKS_SALUD):
         ruta = crear_tarjeta_viral(gancho_salud, "salud", idx)
-        print(f" [✓] Gráfico Salud creado: {ruta}")
+        print(f" [OK] Gráfico Salud creado: {ruta}")
         
     print("\nGenerando material de Libertad Financiera (Network Marketing)...")
     for idx, gancho_negocio in enumerate(HOOKS_NEGOCIO):
         ruta = crear_tarjeta_viral(gancho_negocio, "negocio", idx)
-        print(f" [✓] Gráfico Negocio creado: {ruta}")
+        print(f" [OK] Gráfico Negocio creado: {ruta}")
         
     print("\n[ÉXITO] ¡14 Nuevos Archivos Publicitarios inyectados en la base rotaiva!")
     print("Ahora Sinergia Bot (publisher.py) los agarrará y programará sin que muevas un dedo.")

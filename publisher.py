@@ -124,7 +124,16 @@ async def publicar_en_meta(context, post):
         print(f">> [IA] Generando texto para {post['id']}...")
         post["texto"] = ai_agent.generar_copy_ia(post.get("id"), whatsapp_phone)
 
-    await page.goto("https://business.facebook.com/latest/composer", wait_until="networkidle")
+    # Detectar si hay un ID de página específico en las variables de entorno
+    page_id = os.getenv("FACEBOOK_PAGE_ID")
+    if page_id:
+        url = f"https://business.facebook.com/latest/composer?asset_id={page_id}"
+        print(f">> [Navegador] Abriendo creador de publicaciones para la FanPage con ID: {page_id}")
+    else:
+        url = "https://business.facebook.com/latest/composer"
+        print(">> [Navegador] Abriendo creador de publicaciones por defecto (sin FACEBOOK_PAGE_ID).")
+
+    await page.goto(url, wait_until="networkidle")
     
     if "login" in page.url:
         print(">> Esperando login manual en monitor web...")

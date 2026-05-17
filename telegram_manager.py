@@ -86,6 +86,9 @@ async def obtener_menu_principal(chat_id):
         [
             {"text": "📝 Solo Texto Salud", "callback_data": "cmd_texto_salud"},
             {"text": "📝 Solo Texto Negocio", "callback_data": "cmd_texto_negocio"}
+        ],
+        [
+            {"text": "🚀 Impulsar en Equipo (Sinergia Boost)", "callback_data": "cmd_sinergia_boost"}
         ]
     ]
     
@@ -101,6 +104,52 @@ async def obtener_menu_principal(chat_id):
         ])
         
     return {"inline_keyboard": keyboard}
+
+async def manejar_sinergia_boost(chat_id):
+    """Muestra el panel Sinergia Boost con las últimas publicaciones oficiales para interactuar en masa."""
+    contenido = cargar_json()
+    
+    # Filtrar posts publicados (aprobados y con fecha de publicación)
+    publicados = [p for p in contenido if p.get("estado") == "aprobado" and p.get("fecha_publicacion")]
+    # Ordenar por fecha de publicación descendente (más recientes primero)
+    publicados.sort(key=lambda x: x.get("fecha_publicacion", ""), reverse=True)
+    
+    page_id = os.getenv("FACEBOOK_PAGE_ID", "100080372792708")
+    page_url = f"https://www.facebook.com/{page_id}"
+    
+    mensaje = (
+        f"🚀 <b>SINERGIA BOOST: IMPULSO COLECTIVO</b> 🔥\n\n"
+        f"Líder, aquí tienes las últimas publicaciones oficiales de nuestra FanPage.\n"
+        f"<b>¡Ayuda a darles likes, comentar y compartirlas en tu muro!</b> Esto posiciona la marca y atrae prospectos a todo el equipo.\n\n"
+    )
+    
+    keyboard = []
+    
+    if not publicados:
+        mensaje += "📭 <i>Aún no hay publicaciones oficiales registradas para impulsar esta semana. ¡Vuelve pronto!</i>"
+        keyboard.append([{"text": "🔄 Volver al Inicio", "callback_data": "cmd_menu_inicio"}])
+    else:
+        for idx, post in enumerate(publicados[:3]):
+            cat = post.get("categoria_imagen", "General").upper()
+            fecha = post.get("fecha_publicacion", "")[:10]
+            texto_prev = post.get("texto", "")[:60].replace("<", "&lt;").replace(">", "&gt;") + "..."
+            
+            mensaje += (
+                f"<b>{idx+1}️⃣ Post de {cat}</b> ({fecha})\n"
+                f"📝 <i>{texto_prev}</i>\n\n"
+            )
+            
+            # Botones para interactuar con este post
+            compartir_url = f"https://www.facebook.com/sharer/sharer.php?u={page_url}"
+            keyboard.append([
+                {"text": f"💬 Like y Comentar ({cat})", "url": page_url},
+                {"text": f"📢 Compartir en 1 Clic", "url": compartir_url}
+            ])
+            
+        keyboard.append([{"text": "🔄 Volver al Inicio", "callback_data": "cmd_menu_inicio"}])
+        
+    markup = {"inline_keyboard": keyboard}
+    await notifications.enviar_mensaje_interactivo(mensaje, markup, chat_id=chat_id)
 
 async def enviar_menu_inicio(chat_id):
     afiliados = cargar_afiliados()
@@ -310,6 +359,8 @@ async def manejar_callback(callback):
         await manejar_generar_post(chat_id, "negocio", solo_texto=True)
     elif data == "cmd_menu_inicio":
         await enviar_menu_inicio(chat_id)
+    elif data == "cmd_sinergia_boost":
+        await manejar_sinergia_boost(chat_id)
     elif data == "cmd_ver_cola":
         contenido = cargar_json()
         pendientes = [p for p in contenido if p.get("estado") == "aprobado" and not p.get("fecha_publicacion")]
@@ -512,11 +563,14 @@ async def manejar_mensaje_texto(chat_id, text, from_user):
             "• <code>/generar_negocio</code>: Borrador con imagen de Redes.\n"
             "• <code>/texto_salud</code>: Borrador de SOLO texto de Ganoderma.\n"
             "• <code>/texto_negocio</code>: Borrador de SOLO texto de Redes.\n"
+            "• <code>/boost</code> o <code>/impulsar</code>: Panel de viralización en equipo.\n"
             "• <code>/link [enlace]</code>: Actualiza tu enlace de Gano iTouch.\n"
             "• <code>/whatsapp [numero]</code>: Actualiza tu WhatsApp.\n"
             "• <code>/start</code>: Abre el panel principal interactivo."
         )
         await notifications.enviar_mensaje_interactivo(txt, chat_id=chat_id)
+    elif text_strip == "/boost" or text_strip == "/impulsar":
+        await manejar_sinergia_boost(chat_id)
     elif text_strip == "/generar_salud":
         await manejar_generar_post(chat_id, "salud", solo_texto=False)
     elif text_strip == "/generar_negocio":
@@ -535,6 +589,30 @@ async def manejar_mensaje_texto(chat_id, text, from_user):
             for idx, p in enumerate(pendientes):
                 txt += f"{idx+1}. <code>{p['id']}</code> - Categoría: <b>{p.get('categoria_imagen')}</b> (Programado)\n"
             await notifications.enviar_alerta(txt, chat_id=chat_id)
+    elif text_strip == "/debug_assets" and perfil.get("rol") == "admin":
+        import os
+        carpeta = "assets_oficiales"
+        if not os.path.exists(carpeta):
+            await notifications.enviar_alerta("❌ La carpeta <code>assets_oficiales</code> NO existe en el servidor.", chat_id=chat_id)
+            return
+        archivos = os.listdir(carpeta)
+        if not archivos:
+            await notifications.enviar_alerta("📁 La carpeta <code>assets_oficiales</code> está VACÍA en el servidor.", chat_id=chat_id)
+            return
+        
+        msg_debug = f"📁 <b>CONTENIDO DE assets_oficiales ({len(archivos)} archivos):</b>\n\n"
+        fotos_grandes = []
+        for f in archivos[:30]:
+            ruta_temp = os.path.join(carpeta, f)
+            size = os.path.getsize(ruta_temp)
+            msg_debug += f"• {f} ({size // 1024} KB)\n"
+            if f.lower().endswith(('.jpg', '.png', '.jpeg')) and size >= 200000:
+                fotos_grandes.append(f)
+                
+        msg_debug += f"\n👉 <b>Fotos grandes (&gt;= 200KB) encontradas:</b> {len(fotos_grandes)}"
+        if len(archivos) > 30:
+            msg_debug += f"\n<i>...y {len(archivos) - 30} archivos más.</i>"
+        await notifications.enviar_alerta(msg_debug, chat_id=chat_id)
     elif text_strip == "/cancelar":
         USER_STATES[chat_id] = None
         await notifications.enviar_alerta("👍 Flujo cancelado. Volvemos al inicio.", chat_id=chat_id)
