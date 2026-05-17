@@ -14,6 +14,10 @@ import notifications
 
 load_dotenv()
 
+# Configuración automática de Display para servidores Linux sin monitor físico (noVNC)
+if os.name == "posix" and "DISPLAY" not in os.environ:
+    os.environ["DISPLAY"] = ":99"
+
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 WHATSAPP_PHONE = os.getenv("WHATSAPP_PHONE", "51947347666")
