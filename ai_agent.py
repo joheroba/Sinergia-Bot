@@ -1,14 +1,68 @@
 import google.generativeai as genai
 import os
 import json
+import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
+def check_local_llm():
+    """
+    Verifica si el servidor local de LM Studio está activo en el puerto 1234.
+    """
+    try:
+        response = requests.get("http://localhost:1234/v1/models", timeout=1)
+        if response.status_code == 200:
+            return True
+    except:
+        pass
+    return False
+
+def query_local_llm(prompt):
+    """
+    Realiza una consulta al servidor local de LM Studio (Gemma 4).
+    """
+    url = "http://localhost:1234/v1/chat/completions"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.7
+    }
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=60)
+        if response.status_code == 200:
+            data = response.json()
+            return data["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        print(f">> [IA Local] Error al consultar LM Studio: {e}")
+    return None
+
 def calificar_prospecto(mensaje):
     """
     Analiza el mensaje del cliente con IA para determinar su nivel de interés.
+    Intenta usar LM Studio (Gemma 4 local) y cae a Gemini Cloud de respaldo.
     """
+    prompt = (
+        f"Analiza este mensaje de un prospecto de Gano Excel: '{mensaje}'. "
+        f"Clasifica su nivel de interés en una sola palabra: 'Bajo', 'Medio' o 'Alto'. "
+        f"Considera 'Alto' si pregunta por precios, afiliación o productos específicos. "
+        f"Responde ÚNICAMENTE con una de las tres palabras sin texto adicional ni asteriscos."
+    )
+
+    if check_local_llm():
+        print(">> [IA] Servidor Local LM Studio DETECTADO. Procesando con Gemma 4...")
+        resultado = query_local_llm(prompt)
+        if resultado:
+            interes = resultado.strip().replace("*", "").replace(".", "")
+            if interes in ["Bajo", "Medio", "Alto"]:
+                return interes
+            for word in ["Alto", "Medio", "Bajo"]:
+                if word in interes:
+                    return word
+
+    # Fallback a Gemini Cloud
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         return "Bajo"
@@ -16,30 +70,18 @@ def calificar_prospecto(mensaje):
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel('gemini-2.5-flash')
     
-    prompt = (
-        f"Analiza este mensaje de un prospecto de Gano Excel: '{mensaje}'. "
-        f"Clasifica su nivel de interés en una sola palabra: 'Bajo', 'Medio' o 'Alto'. "
-        f"Considera 'Alto' si pregunta por precios, afiliación o productos específicos. "
-        f"Responde ÚNICAMENTE con una de las tres palabras."
-    )
-    
     try:
         response = model.generate_content(prompt)
         interes = response.text.strip().replace("*", "").replace(".", "")
         return interes if interes in ["Bajo", "Medio", "Alto"] else "Bajo"
     except Exception as e:
-        print(f"Error calificador: {e}")
+        print(f"Error calificador Gemini Cloud: {e}")
         return "Bajo"
 
 def generar_copy_ia(id_publicacion, whatsapp_phone):
     """
-    Genera un texto persuasivo (copywriting) para redes sociales usando Gemini.
+    Genera un texto persuasivo (copywriting) para redes sociales usando Gemini o Gemma 4 Local.
     """
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        print(">> [IA] Error: No se encontró GEMINI_API_KEY en el entorno.")
-        return ""
-
     # Determinar categoría buscando en contenido_ganoderma.json
     categoria = "bienestar"
     try:
@@ -52,9 +94,6 @@ def generar_copy_ia(id_publicacion, whatsapp_phone):
                         break
     except Exception as e:
         print(f">> [IA] Error al leer la categoría del post: {e}")
-
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-2.5-flash')
 
     # Ajustar el enfoque según la categoría del post
     if categoria in ["bebibles", "clasico", "bebidas"]:
@@ -106,28 +145,46 @@ def generar_copy_ia(id_publicacion, whatsapp_phone):
         f"Responde únicamente con el texto completo del post finalizado, listo para copiar y pegar, sin explicaciones ni notas adicionales."
     )
 
+    # Definir texto alternativo/fallback si falla todo
+    if categoria == "negocio":
+        fallback_text = (
+            "¿Y si tu bebida de cada mañana comenzara a pagarte grandes dividendos? 📈☕\n"
+            "Construye autonomía financiera y genera ingresos residuales desde la comodidad de tu hogar asociándote con un gigante mundial del bienestar.\n\n"
+            "👉 Conviértete en distribuidor y empieza a crecer hoy mismo:\n"
+            f"🔗 {store_url}\n\n"
+            f"O escríbeme directamente al WhatsApp (+{whatsapp_phone}) para darte todos los detalles de la duplicación comercial. 🚀"
+        )
+    else:
+        fallback_text = (
+            "¡Dale a tu cuerpo el escudo natural que se merece! 🛡️🍄\n"
+            "Empieza tus mañanas llenándote de energía real y antioxidantes profundos gracias a las infusiones enriquecidas con Ganoderma Lucidum soluble de Gano Excel.\n\n"
+            "👉 Pídelo 100% seguro en mi portal oficial y recíbelo en casa:\n"
+            f"🔗 {store_url}\n\n"
+            f"Dudas o pedidos rápidos al WhatsApp (+{whatsapp_phone}). ¡Sabor y vitalidad garantizada! ☕✨"
+        )
+
+    # 1. Intentar con LM Studio (Gemma 4 local)
+    if check_local_llm():
+        print(">> [IA] Servidor Local LM Studio DETECTADO. Generando copy con Gemma 4...")
+        resultado = query_local_llm(prompt)
+        if resultado:
+            return resultado
+
+    # 2. Fallback a Gemini Cloud
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        print(">> [IA] Error: No se encontró GEMINI_API_KEY en el entorno y LM Studio no responde. Usando texto de respaldo...")
+        return fallback_text
+
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel('gemini-2.5-flash')
+
     try:
         response = model.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
-        print(f"Error al generar copy con IA: {e}")
-        # Fallback si falla la API
-        if categoria == "negocio":
-            return (
-                "¿Y si tu bebida de cada mañana comenzara a pagarte grandes dividendos? 📈☕\n"
-                "Construye autonomía financiera y genera ingresos residuales desde la comodidad de tu hogar asociándote con un gigante mundial del bienestar.\n\n"
-                "👉 Conviértete en distribuidor y empieza a crecer hoy mismo:\n"
-                f"🔗 {store_url}\n\n"
-                f"O escríbeme directamente al WhatsApp (+{whatsapp_phone}) para darte todos los detalles de la duplicación comercial. 🚀"
-            )
-        else:
-            return (
-                "¡Dale a tu cuerpo el escudo natural que se merece! 🛡️🍄\n"
-                "Empieza tus mañanas llenándote de energía real y antioxidantes profundos gracias a las infusiones enriquecidas con Ganoderma Lucidum soluble de Gano Excel.\n\n"
-                "👉 Pídelo 100% seguro en mi portal oficial y recíbelo en casa:\n"
-                f"🔗 {store_url}\n\n"
-                f"Dudas o pedidos rápidos al WhatsApp (+{whatsapp_phone}). ¡Sabor y vitalidad garantizada! ☕✨"
-            )
+        print(f"Error al generar copy con Gemini Cloud: {e}. Usando texto de respaldo...")
+        return fallback_text
 
 if __name__ == "__main__":
     # Prueba rápida con codificación de consola segura
@@ -137,7 +194,13 @@ if __name__ == "__main__":
     except AttributeError:
         pass
     
+    print("Verificando soporte local de LM Studio (Gemma 4)...")
+    if check_local_llm():
+        print(">> [✓] ¡Servidor Local LM Studio activo en puerto 1234!")
+    else:
+        print(">> [x] Servidor Local LM Studio no disponible (usando Gemini Cloud de respaldo).")
+
     copy_text = generar_copy_ia("publicacion_06", "51999122333")
-    print("Test Copy:\n", copy_text)
+    print("\nTest Copy:\n", copy_text)
     print("\nTest Scoring:", calificar_prospecto("Hola, ¿cuánto cuesta el paquete ESP3 para afiliarme?"))
 
