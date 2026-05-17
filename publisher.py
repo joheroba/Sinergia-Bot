@@ -141,6 +141,10 @@ async def publicar_en_meta(context, post):
         await page.wait_for_url("**/latest/composer**", timeout=0)
 
     try:
+        # 1. Esperar a que el creador cargue por completo (el cuadro de texto editable)
+        caja_texto = page.locator('div[contenteditable="true"]').first
+        await caja_texto.wait_for(state="visible", timeout=30000)
+
         # A. Descartar carteles de tutoría/onboarding (como el botón "Listo" de color morado)
         try:
             for selector in ['button:has-text("Listo")', 'div[role="button"]:has-text("Listo")', 'button:has-text("Entendido")', 'div[role="button"]:has-text("Entendido")']:
@@ -148,7 +152,7 @@ async def publicar_en_meta(context, post):
                 if await btn.is_visible():
                     await btn.click()
                     print(">> [Meta UI] Cartel informativo descartado.")
-                    await page.wait_for_timeout(1000)
+                    await page.wait_for_timeout(1500)
         except Exception as e_pop:
             print(f">> [Meta UI] Omitiendo descarte de cartel: {e_pop}")
 
@@ -206,9 +210,7 @@ async def publicar_en_meta(context, post):
         except Exception as e_dest:
             print(f">> [Destino Facebook] Error forzando destino (se usará el predeterminado): {e_dest}")
 
-        # 1. Escribir texto
-        caja_texto = page.locator('div[contenteditable="true"]').first
-        await caja_texto.wait_for(state="visible", timeout=20000)
+        # 2. Escribir texto
         await caja_texto.fill(post["texto"])
         
         # 2. Brandeo e Imagen
