@@ -141,6 +141,71 @@ async def publicar_en_meta(context, post):
         await page.wait_for_url("**/latest/composer**", timeout=0)
 
     try:
+        # A. Descartar carteles de tutoría/onboarding (como el botón "Listo" de color morado)
+        try:
+            for selector in ['button:has-text("Listo")', 'div[role="button"]:has-text("Listo")', 'button:has-text("Entendido")', 'div[role="button"]:has-text("Entendido")']:
+                btn = page.locator(selector).first
+                if await btn.is_visible():
+                    await btn.click()
+                    print(">> [Meta UI] Cartel informativo descartado.")
+                    await page.wait_for_timeout(1000)
+        except Exception as e_pop:
+            print(f">> [Meta UI] Omitiendo descarte de cartel: {e_pop}")
+
+        # B. Forzar destino exacto (Gano Excel) en el selector "Publicar en"
+        try:
+            print(">> [Destino Facebook] Configurando página Gano Excel...")
+            # Click en dropdown de "Publicar en"
+            dropdown_selectors = [
+                'div[role="button"]:has-text("Publicar en")',
+                'div:has-text("Publicar en") > div[role="button"]',
+                'div[role="combobox"]:has-text("Publicar en")'
+            ]
+            dropdown_found = False
+            for sel in dropdown_selectors:
+                dropdown = page.locator(sel).first
+                if await dropdown.is_visible():
+                    await dropdown.click()
+                    dropdown_found = True
+                    print(">> [Destino Facebook] Dropdown abierto.")
+                    break
+            
+            if dropdown_found:
+                await page.wait_for_timeout(2000)
+                
+                # Buscar y marcar "Gano Excel"
+                gano_item = page.locator('div[role="checkbox"]:has-text("Gano Excel"), span:has-text("Gano Excel")').first
+                if await gano_item.is_visible():
+                    checkbox_gano = page.locator('div[role="checkbox"]:has-text("Gano Excel")').first
+                    if await checkbox_gano.is_visible():
+                        checked = await checkbox_gano.get_attribute("aria-checked")
+                        if checked != "true":
+                            await checkbox_gano.click()
+                            print(">> [Destino Facebook] Marcado Gano Excel.")
+                    else:
+                        await gano_item.click()
+                        print(">> [Destino Facebook] Clic Gano Excel.")
+                
+                # Buscar y desmarcar "Viajes y aventura"
+                viajes_item = page.locator('div[role="checkbox"]:has-text("Viajes y aventura"), span:has-text("Viajes y aventura")').first
+                if await viajes_item.is_visible():
+                    checkbox_viajes = page.locator('div[role="checkbox"]:has-text("Viajes y aventura")').first
+                    if await checkbox_viajes.is_visible():
+                        checked = await checkbox_viajes.get_attribute("aria-checked")
+                        if checked == "true":
+                            await checkbox_viajes.click()
+                            print(">> [Destino Facebook] Desmarcado Viajes y aventura.")
+                
+                # Cerrar dropdown
+                for sel in dropdown_selectors:
+                    dropdown = page.locator(sel).first
+                    if await dropdown.is_visible():
+                        await dropdown.click()
+                        break
+                await page.wait_for_timeout(1000)
+        except Exception as e_dest:
+            print(f">> [Destino Facebook] Error forzando destino (se usará el predeterminado): {e_dest}")
+
         # 1. Escribir texto
         caja_texto = page.locator('div[contenteditable="true"]').first
         await caja_texto.wait_for(state="visible", timeout=20000)
