@@ -96,23 +96,30 @@ async def publicar_en_meta(context, post):
         await caja_texto.wait_for(state="visible", timeout=20000)
         await caja_texto.fill(post["texto"])
         
-        # 2. Brandeo e Imagen
-        ruta_original = None
-        if "categoria_imagen" in post:
-            ruta_original = obtener_media_rotativa(post["categoria_imagen"])
-        
-        if ruta_original:
-            print(f">> [Brandeo] Procesando {ruta_original}...")
-            ruta_branded = branding_tool.brandear_imagen(ruta_original, LOGO_PATH)
+        # 2. Brandeo e Imagen (Omitir completamente si es un post de solo texto)
+        ruta_branded = None
+        if not post.get("solo_texto", False):
+            # Priorizar la imagen específica creada para este borrador
+            if post.get("ruta_imagen_local") and os.path.exists(post["ruta_imagen_local"]):
+                ruta_branded = post["ruta_imagen_local"]
+                print(f">> [Brandeo] Usando imagen específica del borrador: {ruta_branded}")
+            elif "categoria_imagen" in post:
+                ruta_original = obtener_media_rotativa(post["categoria_imagen"])
+                if ruta_original:
+                    print(f">> [Brandeo] Procesando imagen rotativa: {ruta_original}...")
+                    ruta_branded = branding_tool.brandear_imagen(ruta_original, LOGO_PATH)
             
-            async with page.expect_file_chooser() as fc_info:
-                await page.locator('div[role="button"]:has-text("Agregar foto/video")').first.click()
-            file_chooser = await fc_info.value
-            await file_chooser.set_files(ruta_branded)
-            await page.wait_for_timeout(5000)
-            
-            # 3. Intentar activar botón de WhatsApp CTA
-            await activar_boton_whatsapp(page)
+            if ruta_branded and os.path.exists(ruta_branded):
+                async with page.expect_file_chooser() as fc_info:
+                    await page.locator('div[role="button"]:has-text("Agregar foto/video")').first.click()
+                file_chooser = await fc_info.value
+                await file_chooser.set_files(ruta_branded)
+                await page.wait_for_timeout(5000)
+                
+                # 3. Intentar activar botón de WhatsApp CTA
+                await activar_boton_whatsapp(page)
+            else:
+                print(">> [Composer] Publicando en formato de SOLO TEXTO (no se especificó o no existe imagen).")
 
         # 4. Publicar
         btn_publicar = page.locator('div[aria-label="Publicar"], button:has-text("Publicar")').last

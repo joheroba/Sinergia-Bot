@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinergia Pro - Simulador Plan Servilleta</title>
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gold: {
+                            light: '#f3e5ab',
+                            DEFAULT: '#d4af37',
+                            dark: '#aa8322'
+                        },
+                        coffee: {
+                            light: '#3e2723',
+                            DEFAULT: '#1c110b',
+                            dark: '#0c0806'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts Outfit & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- React & Babel CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #0c0806 0%, #1c110b 50%, #0c0806 100%);
+            color: #f0ebe1;
+        }
+        /* Custom scrollbar for premium look */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0c0806; }
+        ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #aa8322; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const FORMAS_DE_GANAR = [
+            {
+                id: 1,
+                titulo: "1. Venta Directa",
+                icono: "shopping-cart",
+                categoria: "Corto Plazo",
+                desc: "Compra productos a precio mayorista de distribuidor y obtén una ganancia inmediata del 30% al 40% al comercializarlos al público general."
+            },
+            {
+                id: 2,
+                titulo: "2. Bono Gen5 (Inicio Rápido)",
+                icono: "zap",
+                categoria: "Corto Plazo",
+                desc: "Gana comisiones semanales por la compra de paquetes ejecutivos (ESP) de tus afiliados nuevos hasta la 5ª generación lineal de tu red. ¡La 5ª generación se duplica!"
+            },
+            {
+                id: 3,
+                titulo: "3. Compensación Binaria",
+                icono: "users",
+                categoria: "Mediano Plazo",
+                desc: "Por cada compra que se realice en tu organización (brazo izquierdo y derecho) acumulas puntos (CV). Cada vez que emparejas 100 CV de cada lado, cobras regalías en dólares."
+            },
+            {
+                id: 4,
+                titulo: "4. Bono Súper Estrella",
+                icono: "award",
+                categoria: "Mediano Plazo",
+                desc: "Un bono diseñado para la duplicación básica: cada vez que patrocinas a un socio directo y le ayudas a patrocinar sus primeros 2 socios, recibes un bono adicional de incentivo."
+            },
+            {
+                id: 5,
+                titulo: "5. Reembolso Personal",
+                icono: "percent",
+                categoria: "Mediano Plazo",
+                desc: "Recibe un porcentaje de reembolso en efectivo por tus propias compras personales que excedan el requisito mensual obligatorio."
+            },
+            {
+                id: 6,
+                titulo: "6. Bono de Liderazgo Generacional",
+                icono: "trending-up",
+                categoria: "Largo Plazo",
+                desc: "Cobra comisiones adicionales basadas en un porcentaje de los ingresos totales del binario que ganen los líderes Diamantes calificados dentro de tu organización."
+            },
+            {
+                id: 7,
+                titulo: "7. Fondo Global (Global Pool)",
+                icono: "globe",
+                categoria: "Largo Plazo",
+                desc: "¡Participa en el reparto del 4% de las ventas mundiales totales de puntos (CV) de la compañía, distribuido trimestralmente entre todos los Diamantes calificados!"
+            }
+        ];
+
+        function App() {
+            // Simulador States
+            const [duplicacion, setDuplicacion] = useState(2);
+            const [meses, setMeses] = useState(12);
+            const [paquete, setPaquete] = useState("ESP3");
+            const [exito, setExito] = useState(100);
+
+            // Accordion State
+            const [activeForma, setActiveForma] = useState(null);
+
+            // Calculations
+            let cv = 500;
+            let gen1_bono = 150;
+            let gen24_bono = 20;
+            let gen5_bono = 40;
+
+            if (paquete === "ESP2") {
+                cv = 250;
+                gen1_bono = 75;
+                gen24_bono = 10;
+                gen5_bono = 20;
+            } else if (paquete === "ESP1") {
+                cv = 100;
+                gen1_bono = 25;
+                gen24_bono = 5;
+                gen5_bono = 10;
+            } else if (paquete === "CONSUMO") {
+                cv = 48; // 4 cajas de café aprox
+                gen1_bono = 0;
+                gen24_bono = 0;
+                gen5_bono = 0;
+            }
+
+            // Fórmula Exponencial de Red: Suma(duplicacion^i) para i=1 a meses
+            // total = R * (R^M - 1) / (R - 1)
+            let totalSocios = 0;
+            const R = Number(duplicacion);
+            const M = Number(meses);
+            
+            if (R === 1) {
+                totalSocios = M;
+            } else {
+                totalSocios = Math.round(R * (Math.pow(R, M) - 1) / (R - 1));
+            }
+
+            // Aplicar porcentaje de éxito
+            const sociosEfectivos = Math.round(totalSocios * (exito / 100));
+            const parejasBinario = Math.floor(sociosEfectivos / 2);
+
+            // Ganancias Binarias (Porcentaje promedio 17% para ESP3/ESP2, 10% para consumo)
+            const tasaBinario = (paquete === "CONSUMO") ? 0.10 : 0.17;
+            const gananciaBinariaPaquetes = parejasBinario * (cv * tasaBinario);
+            
+            // Si la red compra paquetes una vez, cobran el binario de paquetes.
+            // Si solo consumen café mensualmente (48 CV):
+            const gananciaMensualCafe = parejasBinario * (48 * 0.17); // Payout residual fijo del consumo de café
+
+            // Bono Gen5 Estimado (Simplificado: asumiendo una duplicación perfecta de tus primeros 'R' directos)
+            let gananciaGen5 = 0;
+            if (paquete !== "CONSUMO") {
+                // Generación 1: R directos
+                gananciaGen5 += R * gen1_bono;
+                // Generación 2: R^2
+                if (M >= 2) gananciaGen5 += Math.pow(R, 2) * gen24_bono;
+                // Generación 3: R^3
+                if (M >= 3) gananciaGen5 += Math.pow(R, 3) * gen24_bono;
+                // Generación 4: R^4
+                if (M >= 4) gananciaGen5 += Math.pow(R, 4) * gen24_bono;
+                // Generación 5: R^5 (Doble Comisión)
+                if (M >= 5) gananciaGen5 += Math.pow(R, 5) * gen5_bono;
+            }
+            const gananciaGen5Efectiva = Math.round(gananciaGen5 * (exito / 100));
+
+            useEffect(() => {
+                // Initialize Lucide icons after rendering
+                lucide.createIcons();
+            }, [activeForma]);
+
+            return (
+                <div class="container mx-auto px-4 py-8 max-w-6xl">
+                    {/* Header */}
+                    <div class="text-center mb-10">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] text-xs font-semibold mb-4 uppercase tracking-wider">
+                            <span class="w-2 h-2 rounded-full bg-green-500 animate-ping"></span>
+                            Simulador Interactivo Sinergia Pro
+                        </div>
+                        <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-white via-gold-light to-gold bg-clip-text text-transparent">
+                            Plan Servilleta Digital
+                        </h1>
+                        <p class="text-gray-400 mt-2 max-w-xl mx-auto">
+                            Proyecta el crecimiento de tu red Gano iTouch y demuestra el poder de la duplicación exponencial en tiempo real.
+                        </p>
+                    </div>
+
+                    {/* Main content grid */}
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                        
+                        {/* Control Panel (Sliders) - 5 cols */}
+                        <div class="lg:col-span-5 bg-[#18100c]/80 backdrop-blur-md border border-[#d4af37]/20 rounded-2xl p-6 shadow-2xl shadow-coffee-dark/50">
+                            <h2 class="text-lg font-bold text-gold border-b border-[#d4af37]/10 pb-3 mb-5 flex items-center gap-2">
+                                <i data-lucide="sliders" class="w-5 h-5"></i> Parámetros de Simulación
+                            </h2>
+
+                            {/* Slider 1: Duplicación */}
+                            <div class="mb-6">
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="text-sm font-semibold text-gray-300">Duplicación Exponencial</label>
+                                    <span class="text-gold font-bold bg-[#d4af37]/10 px-2.5 py-0.5 rounded text-sm">
+                                        De {duplicacion} en {duplicacion}
+                                    </span>
+                                </div>
+                                <input 
+                                    type="range" min="2" max="5" step="1" 
+                                    value={duplicacion} 
+                                    onChange={(e) => setDuplicacion(e.target.value)}
+                                    class="w-full h-1.5 bg-[#3e2723] rounded-lg appearance-none cursor-pointer accent-[#d4af37]"
+                                />
+                                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                    <span>2x2 (Binario)</span>
+                                    <span>3x3</span>
+                                    <span>4x4</span>
+                                    <span>5x5 (Consolidado)</span>
+                                </div>
+                            </div>
+
+                            {/* Slider 2: Meses */}
+                            <div class="mb-6">
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="text-sm font-semibold text-gray-300">Tiempo de Duplicación (Ciclos / Meses)</label>
+                                    <span class="text-gold font-bold bg-[#d4af37]/10 px-2.5 py-0.5 rounded text-sm">
+                                        {meses} Meses
+                                    </span>
+                                </div>
+                                <input 
+                                    type="range" min="1" max="12" step="1" 
+                                    value={meses} 
+                                    onChange={(e) => setMeses(e.target.value)}
+                                    class="w-full h-1.5 bg-[#3e2723] rounded-lg appearance-none cursor-pointer accent-[#d4af37]"
+                                />
+                                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                    <span>1 mes</span>
+                                    <span>6 meses</span>
+                                    <span>12 meses (1 año)</span>
+                                </div>
+                            </div>
+
+                            {/* Dropdown: Paquete */}
+                            <div class="mb-6">
+                                <label class="block text-sm font-semibold text-gray-300 mb-2">Paquete de Afiliación / Consumo</label>
+                                <select 
+                                    value={paquete} 
+                                    onChange={(e) => setPaquete(e.target.value)}
+                                    class="w-full bg-[#271a14] border border-[#d4af37]/30 text-gray-200 py-2.5 px-3 rounded-lg focus:outline-none focus:border-[#d4af37] font-semibold"
+                                >
+                                    <option value="ESP3">Paquete Ejecutivo ESP3 (500 CV - Alta Inversión)</option>
+                                    <option value="ESP2">Paquete Ejecutivo ESP2 (250 CV - Mediana Inversión)</option>
+                                    <option value="ESP1">Paquete Ejecutivo ESP1 (100 CV - Inversión Básica)</option>
+                                    <option value="CONSUMO">Consumo Residual de Café (48 CV - Activación Mensual)</option>
+                                </select>
+                            </div>
+
+                            {/* Slider 3: % de Exito */}
+                            <div class="mb-2">
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="text-sm font-semibold text-gray-300">Porcentaje de Éxito de la Red</label>
+                                    <span class="text-gold font-bold bg-[#d4af37]/10 px-2.5 py-0.5 rounded text-sm">
+                                        {exito}% Éxito
+                                    </span>
+                                </div>
+                                <input 
+                                    type="range" min="10" max="100" step="10" 
+                                    value={exito} 
+                                    onChange={(e) => setExito(e.target.value)}
+                                    class="w-full h-1.5 bg-[#3e2723] rounded-lg appearance-none cursor-pointer accent-[#d4af37]"
+                                />
+                                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                    <span>10% (Plan de Respaldo)</span>
+                                    <span>50% (Moderado)</span>
+                                    <span>100% (Teoría Perfecta)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Projection Results Panel - 7 cols */}
+                        <div class="lg:col-span-7 flex flex-col gap-6">
+                            
+                            {/* Stats Highlights */}
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="bg-gradient-to-b from-[#221610] to-[#140c08] border border-[#d4af37]/10 p-5 rounded-2xl text-center shadow-lg">
+                                    <div class="text-[#d4af37] text-xs font-bold uppercase mb-1 tracking-wider">Socios Activos</div>
+                                    <div class="text-3xl font-extrabold text-white tracking-tight">
+                                        {sociosEfectivos.toLocaleString()}
+                                    </div>
+                                    <div class="text-gray-500 text-[10px] mt-1">De {totalSocios.toLocaleString()} proyectados</div>
+                                </div>
+                                
+                                <div class="bg-gradient-to-b from-[#221610] to-[#140c08] border border-[#d4af37]/10 p-5 rounded-2xl text-center shadow-lg">
+                                    <div class="text-[#d4af37] text-xs font-bold uppercase mb-1 tracking-wider">Parejas en Binario</div>
+                                    <div class="text-3xl font-extrabold text-white tracking-tight">
+                                        {parejasBinario.toLocaleString()}
+                                    </div>
+                                    <div class="text-gray-500 text-[10px] mt-1">1 Izq : 1 Der</div>
+                                </div>
+
+                                <div class="bg-gradient-to-b from-[#221610] to-[#140c08] border border-[#d4af37]/10 p-5 rounded-2xl text-center shadow-lg">
+                                    <div class="text-[#d4af37] text-xs font-bold uppercase mb-1 tracking-wider">Puntos de Red (CV)</div>
+                                    <div class="text-3xl font-extrabold text-white tracking-tight">
+                                        {(sociosEfectivos * cv).toLocaleString()}
+                                    </div>
+                                    <div class="text-gray-500 text-[10px] mt-1">Acumulados en la red</div>
+                                </div>
+                            </div>
+
+                            {/* Financial Royalties Panel */}
+                            <div class="bg-gradient-to-r from-coffee-light to-coffee border border-gold/30 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
+                                <div class="absolute right-0 top-0 opacity-5 w-48 h-48 translate-x-12 -translate-y-12">
+                                    <i data-lucide="dollar-sign" class="w-full h-full text-gold"></i>
+                                </div>
+                                
+                                <h3 class="text-gold font-bold text-sm uppercase tracking-widest mb-4">
+                                    Simulación Financiera Gano iTouch
+                                </h3>
+
+                                <div class="space-y-6">
+                                    {/* Ingreso Inmediato */}
+                                    {paquete !== "CONSUMO" && (
+                                        <div class="flex justify-between items-center border-b border-[#d4af37]/10 pb-4">
+                                            <div>
+                                                <div class="font-bold text-white text-base flex items-center gap-1.5">
+                                                    💵 Bono Gen5 (Patrocinio Rápido)
+                                                </div>
+                                                <div class="text-gray-400 text-xs mt-0.5">Pagado una vez en base a los paquetes adquiridos.</div>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="text-2xl font-black text-white">${gananciaGen5Efectiva.toLocaleString()} USD</div>
+                                                <div class="text-gold text-xs font-semibold">S/ {(gananciaGen5Efectiva * 3.75).toLocaleString(undefined, {maximumFractionDigits: 0})} PEN</div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Comisiones del Binario (Paquetes) */}
+                                    {paquete !== "CONSUMO" && (
+                                        <div class="flex justify-between items-center border-b border-[#d4af37]/10 pb-4">
+                                            <div>
+                                                <div class="font-bold text-white text-base flex items-center gap-1.5">
+                                                    ⚡ Comisión Binaria Inicial (Paquetes)
+                                                </div>
+                                                <div class="text-gray-400 text-xs mt-0.5">Por emparejar los puntos de afiliación iniciales.</div>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="text-2xl font-black text-white">${gananciaBinariaPaquetes.toLocaleString()} USD</div>
+                                                <div class="text-gold text-xs font-semibold">S/ {(gananciaBinariaPaquetes * 3.75).toLocaleString(undefined, {maximumFractionDigits: 0})} PEN</div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Residual Mensual por Consumo de Café */}
+                                    <div class="flex justify-between items-center bg-[#d4af37]/5 border border-[#d4af37]/20 p-4 rounded-xl">
+                                        <div>
+                                            <div class="font-extrabold text-gold-light text-base flex items-center gap-1.5">
+                                                ☕ Ingreso Pasivo Mensual Residual
+                                            </div>
+                                            <div class="text-gray-300 text-xs mt-0.5">Regalía mensual fija si toda la red consume 4 cajas de café al mes.</div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-3xl font-black text-yellow-400">${gananciaMensualCafe.toLocaleString(undefined, {maximumFractionDigits: 2})} USD</div>
+                                            <div class="text-gold-light text-xs font-extrabold">S/ {(gananciaMensualCafe * 3.75).toLocaleString(undefined, {maximumFractionDigits: 0})} PEN al mes</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Proyección Servilleta Visual / Infografías */}
+                    <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Infografia 1 */}
+                        <div class="bg-[#18100c]/40 border border-[#d4af37]/10 rounded-2xl p-6 shadow-xl text-center">
+                            <h3 class="text-gold font-bold mb-4 flex items-center justify-center gap-2">
+                                <i data-lucide="book-open" class="w-5 h-5"></i> Estructura del Plan Servilleta 2x2
+                            </h3>
+                            <div class="rounded-xl overflow-hidden border border-[#d4af37]/20 bg-black/30 p-2">
+                                <img src="assets_oficiales/plan_servilleta_infografia.png" alt="Plan Servilleta 2x2" class="max-w-full h-auto mx-auto rounded-lg" />
+                            </div>
+                        </div>
+
+                        {/* Infografia 2 */}
+                        <div class="bg-[#18100c]/40 border border-[#d4af37]/10 rounded-2xl p-6 shadow-xl text-center">
+                            <h3 class="text-gold font-bold mb-4 flex items-center justify-center gap-2">
+                                <i data-lucide="award" class="w-5 h-5"></i> 12 Formas de Ganar Gano iTouch
+                            </h3>
+                            <div class="rounded-xl overflow-hidden border border-[#d4af37]/20 bg-black/30 p-2">
+                                <img src="assets_oficiales/plan_compensacion_infografia.png" alt="12 Formas de Ganar" class="max-w-full h-auto mx-auto rounded-lg" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Section: The 12 Ways to Earn - Tabs Accordion */}
+                    <div class="mt-16 bg-[#18100c]/80 backdrop-blur-md border border-[#d4af37]/10 rounded-2xl p-8 shadow-2xl">
+                        <div class="text-center mb-8">
+                            <h2 class="text-2xl md:text-3xl font-bold text-gold">
+                                Conoce las 12 Formas de Ganar Dinero
+                            </h2>
+                            <p class="text-gray-400 text-sm mt-1">
+                                En Gano iTouch, la simulación binaria es solo el comienzo. Haz clic en las formas principales para ver cómo funcionan.
+                            </p>
+                        </div>
+
+                        {/* Accordion / List of Ways to earn */}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {FORMAS_DE_GANAR.map((forma) => (
+                                <div 
+                                    key={forma.id}
+                                    onClick={() => setActiveForma(activeForma === forma.id ? null : forma.id)}
+                                    class={`cursor-pointer transition-all duration-300 p-4 rounded-xl border ${
+                                        activeForma === forma.id 
+                                            ? 'bg-gradient-to-r from-coffee-light to-coffee border-[#d4af37] shadow-lg shadow-gold/5' 
+                                            : 'bg-[#221610]/40 border-[#d4af37]/10 hover:border-[#d4af37]/30'
+                                    }`}
+                                >
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex items-center gap-3">
+                                            <span class="w-8 h-8 rounded-full bg-[#d4af37]/10 text-gold flex items-center justify-center font-bold text-sm">
+                                                {forma.id}
+                                            </span>
+                                            <span class="font-bold text-white text-sm md:text-base">
+                                                {forma.titulo}
+                                            </span>
+                                        </div>
+                                        <span class={`text-[10px] px-2 py-0.5 rounded font-extrabold uppercase ${
+                                            forma.categoria === 'Corto Plazo' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                                            forma.categoria === 'Mediano Plazo' ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20' :
+                                            'bg-green-500/10 text-green-400 border border-green-500/20'
+                                        }`}>
+                                            {forma.categoria}
+                                        </span>
+                                    </div>
+                                    
+                                    {/* Collapsible Content */}
+                                    <div class={`transition-all overflow-hidden duration-300 ${
+                                        activeForma === forma.id ? 'max-h-40 mt-3 opacity-100' : 'max-h-0 opacity-0'
+                                    }`}>
+                                        <p class="text-gray-300 text-xs md:text-sm leading-relaxed border-t border-[#d4af37]/10 pt-3">
+                                            {forma.desc}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div class="text-center mt-12 text-gray-500 text-xs border-t border-[#d4af37]/10 pt-6">
+                        Sinergia Pro • Plan Servilleta Interactivo • Gano iTouch Oficial • Enriqueciendo Vidas
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

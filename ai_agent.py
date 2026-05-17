@@ -95,29 +95,30 @@ def generar_copy_ia(id_publicacion, whatsapp_phone):
     except Exception as e:
         print(f">> [IA] Error al leer la categoría del post: {e}")
 
-    # Ajustar el enfoque según la categoría del post
+    # Ajustar el enfoque según la categoría del post alineado con los 4 Pilares Oficiales de Gano iTouch Peru
     if categoria in ["bebibles", "clasico", "bebidas"]:
         system_context = (
             "Eres un experto en Marketing de Afiliados y copywriter profesional para Gano Excel / Gano iTouch.\n"
-            "Tu objetivo es redactar un post persuasivo de Facebook para vender bebidas premium enriquecidas con Ganoderma Lucidum (Café 3 en 1, Café Classic negro o Chocolate).\n"
-            "Enfatiza la combinación de sabor delicioso, bienestar diario, energía natural sostenida y antioxidantes.\n"
+            "Tu objetivo es redactar un post persuasivo de Facebook enfocado en el pilar oficial ⚡ ENERGIZA (Energiza).\n"
+            "Vende las bebidas premium enriquecidas con Ganoderma Lucidum (Café 3 en 1, Café Classic negro o Chocolate).\n"
+            "Enfatiza la vitalidad natural sostenida, el enfoque mental, el rendimiento físico diario y la delicia del café gourmet sin sufrir taquicardia ni nerviosismo.\n"
         )
     elif categoria == "salud":
         system_context = (
             "Eres un experto en Marketing de Afiliados y copywriter profesional para Gano Excel / Gano iTouch.\n"
-            "Tu objetivo es redactar un post persuasivo de Facebook enfocado en la salud y el sistema inmunológico.\n"
-            "Enfatiza el poder del extracto 100% soluble de Ganoderma Lucidum como un súper alimento antioxidante, regulador de defensas y promotor del bienestar general.\n"
+            "Tu objetivo es redactar un post persuasivo de Facebook enfocado en los pilares oficiales ➕ REVITALIZA (Revitaliza) y 💜 ARMONIZA (Armoniza).\n"
+            "Enfatiza el poder del extracto 100% soluble de Ganoderma Lucidum para la nutrición celular profunda, el fortalecimiento activo del sistema inmunológico (defensas) y el equilibrio corporal que ayuda a mitigar el estrés y conseguir paz mental y descanso reparador.\n"
         )
     elif categoria == "negocio":
         system_context = (
             "Eres un experto en Marketing de Afiliados y copywriter profesional para Gano Excel / Gano iTouch.\n"
-            "Tu objetivo es redactar un post de Facebook persuasivo enfocado en la oportunidad de negocio y libertad financiera con Network Marketing.\n"
-            "Invita a las personas a generar ingresos residuales duraderos y construir su propia red comercial desde casa distribuyendo bienestar con el gigante malayo Gano Excel.\n"
+            "Tu objetivo es redactar un post de Facebook persuasivo enfocado en el pilar oficial 💬 SOCIALIZA (Socializa) y la prosperidad comunitaria.\n"
+            "Invita a las personas a emprender con Network Marketing, compartiendo bienestar y construyendo una red de residuales sólida desde casa que les brinde verdadera libertad financiera con el respaldo de Gano Excel.\n"
         )
     else:
         system_context = (
             "Eres un experto en Marketing de Afiliados y copywriter profesional para Gano Excel / Gano iTouch.\n"
-            "Tu objetivo es redactar un post persuasivo de Facebook sobre suplementos premium enriquecidos con Ganoderma Lucidum.\n"
+            "Tu objetivo es redactar un post persuasivo de Facebook alineado con los 4 Pilares Corporativos Oficiales: ⚡ ENERGIZA, ➕ REVITALIZA, 💜 ARMONIZA y 💬 SOCIALIZA.\n"
         )
 
     # Restricciones éticas (Evitar claims de curación de enfermedades graves para cumplir regulaciones)
@@ -180,7 +181,11 @@ def generar_copy_ia(id_publicacion, whatsapp_phone):
     model = genai.GenerativeModel('gemini-2.5-flash')
 
     try:
-        response = model.generate_content(prompt)
+        # Timeout de 15 segundos para evitar bloqueos de red indefinidos
+        response = model.generate_content(
+            prompt,
+            request_options={"timeout": 15.0}
+        )
         return response.text.strip()
     except Exception as e:
         print(f"Error al generar copy con Gemini Cloud: {e}. Usando texto de respaldo...")

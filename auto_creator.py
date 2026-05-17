@@ -39,8 +39,13 @@ def dibujar_word_wrap(draw, texto_largo, fuente, x_caja, y_caja, ancho_caja, alt
     y_text = y_caja + (alto_caja // 2) - (len(lineas) * interlineado // 2)
     
     for linea in lineas:
-        bbox = draw.textbbox((0, 0), linea, font=fuente)
-        ancho_linea = bbox[2] - bbox[0]
+        try:
+            bbox = draw.textbbox((0, 0), linea, font=fuente)
+            ancho_linea = bbox[2] - bbox[0]
+        except Exception:
+            # Fallback seguro para fuentes que no soportan getbbox (como la default en Linux)
+            ancho_linea = len(linea) * 22
+            
         x_alineado = x_caja + (ancho_caja - ancho_linea) / 2
         
         # Efecto Parallax en las letras (Sombra Negra dura de contraste)
@@ -52,26 +57,67 @@ def dibujar_word_wrap(draw, texto_largo, fuente, x_caja, y_caja, ancho_caja, alt
 def crear_tarjeta_viral(texto, categoria, index):
     ancho, alto = 1080, 1080
     
-    # 1. MONTAR FOTOGRAFÍA FÍSICA A LA PANTALLA
+    # 1. MONTAR FOTOGRAFÍA FÍSICA A LA PANTALLA (CON FILTRADO HD Y SELECCIÓN INTELIGENTE)
     carpeta_assets = "assets_oficiales"
     try:
-        # Busca todas las fotos que el Scrapper bajó
-        fotos = [f for f in os.listdir(carpeta_assets) if f.endswith(('.jpg', '.png', '.jpeg'))]
-        if fotos:
-            img_ruta = os.path.join(carpeta_assets, random.choice(fotos))
-            fondo_base = Image.open(img_ruta).convert('RGBA')
-            # Crop Inteligente a cuadrado de Instagram 1:1 sin deformar
-            img = ImageOps.fit(fondo_base, (ancho, alto), method=Image.Resampling.LANCZOS)
-        else:
-            raise Exception("Carpeta Vacía")
-    except:
-        # Backup Background en caso alguien elimine las fotos
+        # Filtrar imágenes que pesen más de 200 KB para evitar iconos pixelados extraídos de los PDF
+        fotos_grandes = []
+        for f in os.listdir(carpeta_assets):
+            if f.endswith(('.jpg', '.png', '.jpeg')):
+                ruta_temp = os.path.join(carpeta_assets, f)
+                if os.path.getsize(ruta_temp) >= 200000: # 200 KB mínimo para HD
+                    fotos_grandes.append(f)
+                    
+        if not fotos_grandes:
+            raise Exception("No hay fotos grandes en assets_oficiales")
+            
+        # Selección inteligente por categoría:
+        foto_elegida = None
+        if categoria == "salud":
+            # Prioridad 1: Imagen Premium de Salud cocreada con IA
+            if "gano_lucidum_health.png" in fotos_grandes:
+                foto_elegida = "gano_lucidum_health.png"
+            else:
+                # Prioridad 2: Archivos que contengan palabras afines
+                afines = [f for f in fotos_grandes if any(k in f.lower() for k in ["health", "salud", "cafe", "coffee", "nutri", "lucidum"])]
+                if afines:
+                    foto_elegida = random.choice(afines)
+        else: # negocio
+            # Prioridad 1: Imagen Premium de Negocio cocreada con IA
+            if "gano_business_gold.png" in fotos_grandes:
+                foto_elegida = "gano_business_gold.png"
+            else:
+                # Prioridad 2: Archivos que contengan palabras afines
+                afines = [f for f in fotos_grandes if any(k in f.lower() for k in ["business", "negocio", "gold", "oro", "corpo", "money", "finan"])]
+                if afines:
+                    foto_elegida = random.choice(afines)
+                    
+        # Fallback 3: Si no hay específicos, elegir cualquiera de los grandes de forma aleatoria
+        if not foto_elegida:
+            foto_elegida = random.choice(fotos_grandes)
+            
+        img_ruta = os.path.join(carpeta_assets, foto_elegida)
+        print(f">> [Fábrica Visual] Seleccionada imagen premium: {img_ruta} ({os.path.getsize(img_ruta)//1024} KB)")
+        
+        fondo_base = Image.open(img_ruta).convert('RGBA')
+        # Crop Inteligente a cuadrado de Instagram 1:1 sin deformar
+        img = ImageOps.fit(fondo_base, (ancho, alto), method=Image.Resampling.LANCZOS)
+    except Exception as e:
+        print(f">> [Fábrica Visual] Alerta al cargar imagen: {e}. Usando fondo de respaldo.")
+        # Backup Background en caso de falla
         img = Image.new('RGBA', (ancho, alto), (54, 25, 11, 255))
 
     draw = ImageDraw.Draw(img, 'RGBA')
     
-    # Fuentes Premium High-Res
-    fuentes_elegantes = ["seguibl.ttf", "calibrib.ttf", "trebucbd.ttf", "arialbd.ttf"]
+    # Fuentes Premium High-Res para centrado y renderizado estético de alta definición
+    if os.name != "nt":
+        fuentes_elegantes = [
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        ]
+    else:
+        fuentes_elegantes = ["seguibl.ttf", "calibrib.ttf", "trebucbd.ttf", "arialbd.ttf"]
+    
     fuente = fuente_logo = None
     for f in fuentes_elegantes:
         try:
@@ -80,6 +126,7 @@ def crear_tarjeta_viral(texto, categoria, index):
             break
         except IOError:
             continue
+            
     if not fuente:
         fuente = fuente_logo = ImageFont.load_default()
 
