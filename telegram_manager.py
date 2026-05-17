@@ -19,6 +19,7 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 WHATSAPP_PHONE = os.getenv("WHATSAPP_PHONE", "51947347666")
 
 JSON_PATH = "contenido_ganoderma.json"
+AFILIADOS_PATH = "afiliados.json"
 
 # Estado de la sesión del usuario (para flujos interactivos de texto como agendar fechas)
 USER_STATES = {}
@@ -42,48 +43,103 @@ def guardar_json(data):
         print(f"Error al guardar JSON: {e}")
         return False
 
-async def obtener_menu_principal():
-    """Genera el teclado interactivo del menú principal con opción de Imagen o Solo Texto."""
-    return {
-        "inline_keyboard": [
-            [
-                {"text": "📢 Generar Post Salud", "callback_data": "cmd_generar_salud"},
-                {"text": "💼 Generar Post Negocio", "callback_data": "cmd_generar_negocio"}
-            ],
-            [
-                {"text": "📝 Solo Texto Salud", "callback_data": "cmd_texto_salud"},
-                {"text": "📝 Solo Texto Negocio", "callback_data": "cmd_texto_negocio"}
-            ],
-            [
-                {"text": "📋 Ver Cola de Publicaciones", "callback_data": "cmd_ver_cola"},
-                {"text": "❓ Ayuda", "callback_data": "cmd_ayuda"}
-            ]
-        ]
+def cargar_afiliados():
+    default_data = {
+        str(TELEGRAM_CHAT_ID): {
+            "nombre": "Jorge Rodríguez (Admin)",
+            "link_tienda": f"https://peru.ganoitouch.biz/{os.getenv('GANO_ITOUCH_STORE', 'joherobacafe')}",
+            "whatsapp": WHATSAPP_PHONE,
+            "activo": True,
+            "rol": "admin"
+        }
     }
+    if not os.path.exists(AFILIADOS_PATH):
+        guardar_afiliados(default_data)
+        return default_data
+    try:
+        with open(AFILIADOS_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error al cargar afiliados: {e}")
+        return default_data
 
-async def enviar_menu_inicio():
-    mensaje = (
-        "🤖 <b>BIENVENIDO AL PANEL INTERACTIVO DE SINERGIA PRO</b>\n\n"
-        "Desde este búnker en tu celular puedes controlar todas las publicaciones de tu FanPage. "
-        "Usa los botones táctiles de abajo para crear y programar material con Inteligencia Artificial."
-    )
-    markup = await obtener_menu_principal()
-    await notifications.enviar_mensaje_interactivo(mensaje, markup)
+def guardar_afiliados(data):
+    try:
+        with open(AFILIADOS_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+        return True
+    except Exception as e:
+        print(f"Error al guardar afiliados: {e}")
+        return False
 
-async def manejar_generar_post(categoria, solo_texto=False):
-    """
-    Genera un borrador completo:
-    - Con imagen: Imagen HD + Copy + Botones.
-    - Solo texto: Copy + Botones.
-    """
-    if solo_texto:
-        await notifications.enviar_alerta(f"⏳ <b>Generando copy de {categoria.upper()} (Solo Texto)...</b> Esto tomará unos segundos. Activando a Gemini.")
+async def obtener_menu_principal(chat_id):
+    """Genera el teclado interactivo del menú principal con opción de Imagen o Solo Texto."""
+    afiliados = cargar_afiliados()
+    perfil = afiliados.get(str(chat_id), {})
+    rol = perfil.get("rol", "usuario")
+    
+    keyboard = [
+        [
+            {"text": "📢 Generar Post Salud", "callback_data": "cmd_generar_salud"},
+            {"text": "💼 Generar Post Negocio", "callback_data": "cmd_generar_negocio"}
+        ],
+        [
+            {"text": "📝 Solo Texto Salud", "callback_data": "cmd_texto_salud"},
+            {"text": "📝 Solo Texto Negocio", "callback_data": "cmd_texto_negocio"}
+        ]
+    ]
+    
+    # Mostrar la opción de cola de publicación solo al Admin (dueño del Fanpage)
+    if rol == "admin":
+        keyboard.append([
+            {"text": "📋 Ver Cola de Publicaciones", "callback_data": "cmd_ver_cola"},
+            {"text": "❓ Ayuda", "callback_data": "cmd_ayuda"}
+        ])
     else:
-        await notifications.enviar_alerta(f"⏳ <b>Generando borrador de {categoria.upper()}...</b> Esto tomará unos segundos. Activando la fábrica visual y a Gemini.")
+        keyboard.append([
+            {"text": "❓ Ayuda e Instrucciones", "callback_data": "cmd_ayuda"}
+        ])
+        
+    return {"inline_keyboard": keyboard}
+
+async def enviar_menu_inicio(chat_id):
+    afiliados = cargar_afiliados()
+    perfil = afiliados.get(str(chat_id), {})
+    nombre = perfil.get("nombre", "Líder Gano iTouch")
+    link = perfil.get("link_tienda", "No registrado")
+    
+    mensaje = (
+        f"🤖 <b>PANEL INTERACTIVO DE SINERGIA BOT</b>\n\n"
+        f"Hola <b>{nombre}</b>. Tu Robot de Prospección está listo.\n"
+        f"🔗 Enlace activo: <code>{link}</code>\n"
+        f"📱 WhatsApp: <code>+{perfil.get('whatsapp', WHATSAPP_PHONE)}</code>\n\n"
+        f"Usa los botones táctiles de abajo para crear imágenes premium y copias persuasivas personalizadas."
+    )
+    markup = await obtener_menu_principal(chat_id)
+    await notifications.enviar_mensaje_interactivo(mensaje, markup, chat_id=chat_id)
+
+async def manejar_generar_post(chat_id, categoria, solo_texto=False):
+    """
+    Genera un borrador completo personalizado para el distribuidor solicitante.
+    """
+    afiliados = cargar_afiliados()
+    perfil = afiliados.get(str(chat_id), {})
+    
+    if not perfil or not perfil.get("activo"):
+        await notifications.enviar_alerta("❌ Tu suscripción a Sinergia Bot no está activa.", chat_id=chat_id)
+        return
+        
+    custom_whatsapp = perfil.get("whatsapp", WHATSAPP_PHONE)
+    custom_link = perfil.get("link_tienda")
+    
+    if solo_texto:
+        await notifications.enviar_alerta(f"⏳ <b>Generando copy de {categoria.upper()} (Solo Texto)...</b> Esto tomará unos segundos. Conectando con la IA.", chat_id=chat_id)
+    else:
+        await notifications.enviar_alerta(f"⏳ <b>Generando borrador de {categoria.upper()}...</b> Esto tomará unos segundos. Diseñando banner HD y copy persuasivo.", chat_id=chat_id)
     
     # 1. Crear el borrador en la base de datos
     contenido = cargar_json()
-    nuevo_id = f"pub_telegram_{int(datetime.now().timestamp())}"
+    nuevo_id = f"pub_tg_{chat_id}_{int(datetime.now().timestamp())}"
     
     # Elegir frase/hook rotativo (solo si se necesita imagen, para la estampa)
     hooks = auto_creator.HOOKS_SALUD if categoria == "salud" else auto_creator.HOOKS_NEGOCIO
@@ -99,7 +155,6 @@ async def manejar_generar_post(categoria, solo_texto=False):
             print(f"Error al crear tarjeta viral: {e}")
             ruta_imagen = "imagenes/logo_autorizado.png"
             
-        # Verificar existencia y aplicar salvaguarda de imagen sólida al vuelo si no existe
         if not os.path.exists(ruta_imagen):
             try:
                 from PIL import Image
@@ -107,22 +162,22 @@ async def manejar_generar_post(categoria, solo_texto=False):
                 img_backup = Image.new("RGB", (1080, 1080), (54, 25, 11))
                 ruta_imagen = "imagenes/backup_temp.jpg"
                 img_backup.save(ruta_imagen)
-                print(">> [Salvaguarda] Imagen no encontrada. Generado fondo sólido temporal de respaldo.")
             except Exception as e_img:
-                print(f">> [Salvaguarda] Fallo al crear imagen de respaldo: {e_img}")
+                print(f">> [Salvaguarda] Fallo al crear imagen: {e_img}")
         
-    # 3. Generar Copy Persuasivo con IA de Gemini
+    # 3. Generar Copy Persuasivo con IA (inyectando el link del distribuidor)
     try:
-        copy_ia = ai_agent.generar_copy_ia(nuevo_id, WHATSAPP_PHONE)
+        copy_ia = ai_agent.generar_copy_ia(nuevo_id, custom_whatsapp, custom_link)
     except Exception as e:
         copy_ia = (
             f"¡Descubre el poder del bienestar natural con Gano iTouch! ☕🍄\n"
-            f"Adquiérelo aquí: {os.getenv('AFFILIATE_LINK')}\n#Bienestar"
+            f"Adquiérelo aquí: {custom_link or 'https://peru.ganoitouch.biz/joherobacafe'}\n#Bienestar"
         )
         
     # Guardar en base de datos en estado de borrador
     nuevo_post = {
         "id": nuevo_id,
+        "chat_id": str(chat_id),
         "estado": "borrador",
         "texto": copy_ia,
         "categoria_imagen": categoria,
@@ -139,51 +194,63 @@ async def manejar_generar_post(categoria, solo_texto=False):
     
     # 4. Enviar a Telegram
     if not solo_texto:
-        # Enviar la Fotografía Brandeada primero
         caption_foto = (
             f"📷 <b>DISEÑO BRANDRADO DE {categoria.upper()}</b>\n"
-            f"<i>Archivo: {os.path.basename(ruta_imagen)} (estampado con tu logo oficial)</i>"
+            f"<i>Descarga esta imagen y compártela en tus redes.</i>"
         )
-        await notifications.enviar_foto_interactiva(ruta_imagen, caption_foto)
+        await notifications.enviar_foto_interactiva(ruta_imagen, caption_foto, chat_id=chat_id)
     
-    # Enviar el Copy persuasivo completo como mensaje de texto dedicado (soporta 4096 caracteres)
+    # Si es Admin (Jorge), mostrar botones de publicación automática. Si es Downline, mostrar menú de cierre
+    es_admin = perfil.get("rol") == "admin"
+    
     mensaje_copy = (
-        f"✍️ <b>BORRADOR DE COPY CREADO POR LA IA ({categoria.upper()}){' [SÓLO TEXTO]' if solo_texto else ''}</b>\n\n"
+        f"✍️ <b>BORRADOR DE COPY PERSONALIZADO ({categoria.upper()})</b>\n\n"
         f"{copy_ia_escaped}\n\n"
-        f"👇 <b>¿Qué deseas hacer con esta publicación?</b>"
     )
     
-    markup = {
-        "inline_keyboard": [
-            [
-                {"text": "✅ Publicar Ahora", "callback_data": f"act_pub_{nuevo_id}"},
-                {"text": "📅 Programar", "callback_data": f"act_prog_{nuevo_id}"}
-            ],
-            [
-                {"text": "🤖 Auto-Piloto", "callback_data": f"act_auto_{nuevo_id}"},
-                {"text": "❌ Descartar", "callback_data": f"act_desc_{nuevo_id}"}
+    if es_admin:
+        mensaje_copy += f"👇 <b>¿Qué deseas hacer con esta publicación en tu FanPage?</b>"
+        markup = {
+            "inline_keyboard": [
+                [
+                    {"text": "✅ Publicar Ahora", "callback_data": f"act_pub_{nuevo_id}"},
+                    {"text": "📅 Programar", "callback_data": f"act_prog_{nuevo_id}"}
+                ],
+                [
+                    {"text": "🤖 Auto-Piloto", "callback_data": f"act_auto_{nuevo_id}"},
+                    {"text": "❌ Descartar", "callback_data": f"act_desc_{nuevo_id}"}
+                ]
             ]
-        ]
-    }
+        }
+    else:
+        mensaje_copy += (
+            f"💡 <b>¡Todo listo!</b> Copia el texto de arriba manteniendo presionado, "
+            f"guarda la imagen y súbelo a tus estados de WhatsApp o Facebook para captar prospectos con tu enlace."
+        )
+        markup = {
+            "inline_keyboard": [
+                [
+                    {"text": "🔄 Crear Otro Post", "callback_data": "cmd_menu_inicio"}
+                ]
+            ]
+        }
     
-    await notifications.enviar_mensaje_interactivo(mensaje_copy, markup)
+    await notifications.enviar_mensaje_interactivo(mensaje_copy, markup, chat_id=chat_id)
 
-async def procesar_publicacion_inmediata(post_id, message_id):
-    """Ejecuta Playwright de forma inmediata en la nube para publicar en Facebook."""
-    await notifications.enviar_alerta("🚀 <b>INICIANDO PUBLICACIÓN:</b> Abriendo Meta Business Suite en Nueva York. Mantente al tanto...")
+async def procesar_publicacion_inmediata(post_id, message_id, chat_id):
+    """Ejecuta Playwright de forma inmediata en la nube para publicar en Facebook (Solo Admin)."""
+    await notifications.enviar_alerta("🚀 <b>INICIANDO PUBLICACIÓN:</b> Abriendo Meta Business Suite en Nueva York. Mantente al tanto...", chat_id=chat_id)
     
     contenido = cargar_json()
     post = next((p for p in contenido if p["id"] == post_id), None)
     
     if not post:
-        await notifications.enviar_alerta("❌ Error: No se encontró el borrador en el servidor.")
+        await notifications.enviar_alerta("❌ Error: No se encontró el borrador en el servidor.", chat_id=chat_id)
         return
         
-    # Cambiar estado para que sea publicable
     post["estado"] = "aprobado"
     guardar_json(contenido)
     
-    # Iniciar Playwright
     from playwright.async_api import async_playwright
     
     exito = False
@@ -208,9 +275,9 @@ async def procesar_publicacion_inmediata(post_id, message_id):
             f"Este post sobre <code>{post.get('categoria_imagen')}</code> ya se encuentra publicado en tu FanPage oficial de Facebook.\n"
             f"¡Listos para recibir prospectos de WhatsApp!"
         )
-        await notifications.editar_mensaje(message_id, caption_exito, {"inline_keyboard": []})
+        await notifications.editar_mensaje(message_id, caption_exito, {"inline_keyboard": []}, chat_id=chat_id)
     else:
-        await notifications.enviar_alerta("❌ <b>ERROR:</b> No se pudo publicar. Entra a tu monitor VNC para revisar si Facebook te pidió clave.")
+        await notifications.enviar_alerta("❌ <b>ERROR:</b> No se pudo publicar. Entra a tu monitor VNC para revisar si Facebook te pidió clave.", chat_id=chat_id)
 
 async def manejar_callback(callback):
     """Procesa los toques en los botones interactivos."""
@@ -218,6 +285,7 @@ async def manejar_callback(callback):
     message = callback.get("message", {})
     message_id = message.get("message_id")
     callback_id = callback.get("id")
+    chat_id = str(message.get("chat", {}).get("id"))
     
     url_resp = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/answerCallbackQuery"
     try:
@@ -229,52 +297,56 @@ async def manejar_callback(callback):
     if not data:
         return
         
-    print(f">> [Callback] Procesando toque: {data}")
+    print(f">> [Callback User {chat_id}] Procesando toque: {data}")
     
     # Menú Principal
     if data == "cmd_generar_salud":
-        await manejar_generar_post("salud", solo_texto=False)
+        await manejar_generar_post(chat_id, "salud", solo_texto=False)
     elif data == "cmd_generar_negocio":
-        await manejar_generar_post("negocio", solo_texto=False)
+        await manejar_generar_post(chat_id, "negocio", solo_texto=False)
     elif data == "cmd_texto_salud":
-        await manejar_generar_post("salud", solo_texto=True)
+        await manejar_generar_post(chat_id, "salud", solo_texto=True)
     elif data == "cmd_texto_negocio":
-        await manejar_generar_post("negocio", solo_texto=True)
+        await manejar_generar_post(chat_id, "negocio", solo_texto=True)
+    elif data == "cmd_menu_inicio":
+        await enviar_menu_inicio(chat_id)
     elif data == "cmd_ver_cola":
         contenido = cargar_json()
         pendientes = [p for p in contenido if p.get("estado") == "aprobado" and not p.get("fecha_publicacion")]
         if not pendientes:
-            await notifications.enviar_alerta("📋 <b>COLA VACÍA:</b> No tienes publicaciones agendadas para el futuro. ¡Prueba a generar una ahora!")
+            await notifications.enviar_alerta("📋 <b>COLA VACÍA:</b> No tienes publicaciones agendadas para el futuro. ¡Prueba a generar una ahora!", chat_id=chat_id)
         else:
             txt = "📋 <b>COLA DE PUBLICACIONES AGENDADAS:</b>\n\n"
             for idx, p in enumerate(pendientes):
                 txt += f"{idx+1}. <code>{p['id']}</code> - Categoría: <b>{p.get('categoria_imagen')}</b> (Programado)\n"
-            await notifications.enviar_alerta(txt)
+            await notifications.enviar_alerta(txt, chat_id=chat_id)
     elif data == "cmd_ayuda":
         txt = (
-            "📖 <b>GUÍA RÁPIDA DE COMANDOS SINERGIA:</b>\n\n"
-            "• <code>/generar_salud</code>: Crea borrador con imagen sobre Ganoderma.\n"
-            "• <code>/generar_negocio</code>: Crea borrador con imagen sobre Redes.\n"
-            "• <code>/texto_salud</code>: Borrador de SOLO texto sobre Ganoderma.\n"
-            "• <code>/texto_negocio</code>: Borrador de SOLO texto sobre Redes.\n"
-            "• <code>/cola</code>: Muestra posts agendados.\n"
-            "• <code>/start</code>: Abre el menú principal con botones interactivos."
+            "📖 <b>GUÍA DE COMANDOS SINERGIA BOT:</b>\n\n"
+            "• <code>/generar_salud</code>: Borrador con imagen de Ganoderma.\n"
+            "• <code>/generar_negocio</code>: Borrador con imagen de Redes.\n"
+            "• <code>/texto_salud</code>: Borrador de SOLO texto de Ganoderma.\n"
+            "• <code>/texto_negocio</code>: Borrador de SOLO texto de Redes.\n"
+            "• <code>/link [enlace]</code>: Registra tu enlace de afiliado.\n"
+            "• <code>/whatsapp [numero]</code>: Registra tu WhatsApp corporativo.\n"
+            "• <code>/start</code>: Abre el panel interactivo principal."
         )
-        await notifications.enviar_alerta(txt)
+        await notifications.enviar_mensaje_interactivo(txt, chat_id=chat_id)
         
-    # Acciones de Borrador (Ahora editan el mensaje de texto dedicado, no la foto)
+    # Acciones de Borrador (Solo Admin)
     elif data.startswith("act_pub_"):
         post_id = data.replace("act_pub_", "")
-        await procesar_publicacion_inmediata(post_id, message_id)
+        await procesar_publicacion_inmediata(post_id, message_id, chat_id)
         
     elif data.startswith("act_prog_"):
         post_id = data.replace("act_prog_", "")
-        USER_STATES[TELEGRAM_CHAT_ID] = f"esperando_fecha_{post_id}_{message_id}"
+        USER_STATES[chat_id] = f"esperando_fecha_{post_id}_{message_id}"
         await notifications.enviar_alerta(
             "📅 <b>PROGRAMACIÓN MANUAL:</b>\n\n"
             "Escribe y envíame la fecha y hora en la que quieres que se publique en este formato exacto:\n"
             "👉 <code>AAAA-MM-DD HH:MM</code>\n\n"
-            "*(Ejemplo: 2026-05-18 15:30)*"
+            "*(Ejemplo: 2026-05-18 15:30)*",
+            chat_id=chat_id
         )
         
     elif data.startswith("act_auto_"):
@@ -290,11 +362,11 @@ async def manejar_callback(callback):
             
             caption_auto = (
                 f"🤖 <b>¡PILOTO AUTOMÁTICO ACTIVADO!</b> 📅\n\n"
-                f"El post sobre <code>{post.get('categoria_imagen')}</code> se ha aprobado y se publicará de forma totalmente automática el:\n"
+                f"El post se ha aprobado y se publicará de forma totalmente automática el:\n"
                 f"👉 <b>{fecha_auto}</b>\n\n"
                 f"¡Puedes relajarte, Sinergia se encarga!"
             )
-            await notifications.editar_mensaje(message_id, caption_auto, {"inline_keyboard": []})
+            await notifications.editar_mensaje(message_id, caption_auto, {"inline_keyboard": []}, chat_id=chat_id)
             
     elif data.startswith("act_desc_"):
         post_id = data.replace("act_desc_", "")
@@ -303,13 +375,94 @@ async def manejar_callback(callback):
         guardar_json(contenido)
         
         caption_desc = "❌ <b>Borrador cancelado y eliminado de la cola del servidor.</b>"
-        await notifications.editar_mensaje(message_id, caption_desc, {"inline_keyboard": []})
+        await notifications.editar_mensaje(message_id, caption_desc, {"inline_keyboard": []}, chat_id=chat_id)
 
-async def manejar_mensaje_texto(text):
-    """Procesamiento de comandos normales o de flujos conversacionales."""
+async def manejar_mensaje_texto(chat_id, text, from_user):
+    """Procesamiento de comandos normales o de flujos conversacionales (Multi-Usuario)."""
     text_strip = text.strip()
-    user_state = USER_STATES.get(TELEGRAM_CHAT_ID)
+    user_state = USER_STATES.get(chat_id)
     
+    afiliados = cargar_afiliados()
+    perfil = afiliados.get(str(chat_id))
+    
+    # --- COMANDOS PÚBLICOS DE ONBOARDING ---
+    if text_strip.startswith("/link"):
+        parts = text_strip.split()
+        if len(parts) < 2:
+            await notifications.enviar_mensaje_interactivo(
+                "⚠️ <b>Uso correcto del comando:</b>\n"
+                "<code>/link [tu_enlace_oficial_gano_itouch]</code>\n\n"
+                "Ejemplo:\n"
+                "<code>/link https://peru.ganoitouch.biz/mariacafe</code>",
+                chat_id=chat_id
+            )
+            return
+            
+        link_usuario = parts[1]
+        if not (link_usuario.startswith("https://") or link_usuario.startswith("http://")):
+            await notifications.enviar_mensaje_interactivo("⚠️ El enlace debe comenzar con <code>https://</code>", chat_id=chat_id)
+            return
+            
+        nombre_completo = f"{from_user.get('first_name', '')} {from_user.get('last_name', '')}".strip() or "Distribuidor"
+        
+        if not perfil:
+            afiliados[str(chat_id)] = {
+                "nombre": nombre_completo,
+                "link_tienda": link_usuario,
+                "whatsapp": WHATSAPP_PHONE, # Defecto inicial
+                "activo": True,
+                "rol": "usuario",
+                "fecha_registro": datetime.now().strftime("%Y-%m-%d")
+            }
+        else:
+            afiliados[str(chat_id)]["link_tienda"] = link_usuario
+            afiliados[str(chat_id)]["nombre"] = nombre_completo
+            
+        guardar_afiliados(afiliados)
+        
+        await notifications.enviar_mensaje_interactivo(
+            f"🎉 <b>¡PORTAL REGISTRADO CON ÉXITO!</b>\n\n"
+            f"Hola <b>{nombre_completo}</b>, hemos guardado tus credenciales:\n"
+            f"🔗 Tienda: <code>{link_usuario}</code>\n\n"
+            f"Para personalizar al máximo tus copies persuasivos, te recomendamos hacer esto:\n"
+            f"1️⃣ Registra tu número de WhatsApp corporativo usando:\n"
+            f"👉 <code>/whatsapp [tu_numero_con_codigo_de_pais]</code> (ejemplo: <code>/whatsapp 51987654321</code>)\n\n"
+            f"2️⃣ ¡Comienza a generar imágenes premium personalizadas!\n"
+            f"👉 Envía <code>/start</code> para abrir tu menú interactivo.",
+            chat_id=chat_id
+        )
+        return
+
+    elif text_strip.startswith("/whatsapp"):
+        if not perfil:
+            await notifications.enviar_mensaje_interactivo("⚠️ Primero debes registrar tu enlace con el comando: `/link [tu_enlace]`", chat_id=chat_id)
+            return
+            
+        parts = text_strip.split()
+        if len(parts) < 2:
+            await notifications.enviar_mensaje_interactivo("⚠️ <b>Uso correcto:</b> <code>/whatsapp [numero]</code>\nEjemplo: <code>/whatsapp 51987654321</code>", chat_id=chat_id)
+            return
+            
+        numero = "".join(filter(str.isdigit, parts[1]))
+        afiliados[str(chat_id)]["whatsapp"] = numero
+        guardar_afiliados(afiliados)
+        
+        await notifications.enviar_mensaje_interactivo(f"✅ <b>WhatsApp Actualizado:</b> +{numero}. Todo listo para tus copies de prospección.", chat_id=chat_id)
+        return
+
+    # --- CONTROL DE ACCESO ---
+    if not perfil or not perfil.get("activo"):
+        await notifications.enviar_mensaje_interactivo(
+            "🤖 <b>¡Hola! Bienvenido a Sinergia Bot Gano iTouch.</b>\n\n"
+            "Para poder crear publicaciones persuasivas y banners premium personalizados con tu marca y enlace oficial, "
+            "necesitas registrarte en nuestro bunker digital.\n\n"
+            "Es sumamente fácil, solo envíame el siguiente comando:\n"
+            "👉 <code>/link [tu_enlace_oficial_de_tienda]</code>",
+            chat_id=chat_id
+        )
+        return
+
+    # --- FLUJOS DE ESTADOS INTERACTIVOS (Solo Admin) ---
     if user_state and user_state.startswith("esperando_fecha_"):
         parts = user_state.split("_")
         post_id = "_".join(parts[2:-1])
@@ -327,7 +480,7 @@ async def manejar_mensaje_texto(text):
                 post["fecha_programada"] = fecha_str
                 guardar_json(contenido)
                 
-                USER_STATES[TELEGRAM_CHAT_ID] = None
+                USER_STATES[chat_id] = None
                 
                 caption_confirmado = (
                     f"📅 <b>¡POST PROGRAMADO CON ÉXITO!</b> ✅\n\n"
@@ -335,22 +488,23 @@ async def manejar_mensaje_texto(text):
                     f"👉 <b>{fecha_str}</b>\n\n"
                     f"Se subirá de forma 100% automática a tu FanPage en esa fecha."
                 )
-                await notifications.editar_mensaje(message_id, caption_confirmado, {"inline_keyboard": []})
-                await notifications.enviar_alerta("👍 ¡Listo! Fecha agendada y guardada en el bunker.")
+                await notifications.editar_mensaje(message_id, caption_confirmado, {"inline_keyboard": []}, chat_id=chat_id)
+                await notifications.enviar_alerta("👍 ¡Listo! Fecha agendada y guardada en el bunker.", chat_id=chat_id)
             else:
-                await notifications.enviar_alerta("❌ Error: No se encontró el post correspondiente en el JSON.")
-                USER_STATES[TELEGRAM_CHAT_ID] = None
+                await notifications.enviar_alerta("❌ Error: No se encontró el post correspondiente en el JSON.", chat_id=chat_id)
+                USER_STATES[chat_id] = None
         except ValueError:
             await notifications.enviar_alerta(
                 "⚠️ <b>Formato incorrecto.</b> Por favor escribe la fecha exactamente así:\n"
                 "<code>AAAA-MM-DD HH:MM</code> (Ejemplo: <code>2026-05-18 16:45</code>)\n\n"
-                "Inténtalo de nuevo o escribe `/cancelar`:"
+                "Inténtalo de nuevo o escribe `/cancelar`:",
+                chat_id=chat_id
             )
         return
 
-    # Comandos Generales
+    # --- COMANDOS PRIVADOS AUTORIZADOS ---
     if text_strip == "/start":
-        await enviar_menu_inicio()
+        await enviar_menu_inicio(chat_id)
     elif text_strip == "/ayuda":
         txt = (
             "📖 <b>GUÍA RÁPIDA DE COMANDOS SINERGIA:</b>\n\n"
@@ -358,34 +512,36 @@ async def manejar_mensaje_texto(text):
             "• <code>/generar_negocio</code>: Borrador con imagen de Redes.\n"
             "• <code>/texto_salud</code>: Borrador de SOLO texto de Ganoderma.\n"
             "• <code>/texto_negocio</code>: Borrador de SOLO texto de Redes.\n"
-            "• <code>/cola</code>: Muestra la cola de posts agendados.\n"
+            "• <code>/link [enlace]</code>: Actualiza tu enlace de Gano iTouch.\n"
+            "• <code>/whatsapp [numero]</code>: Actualiza tu WhatsApp.\n"
             "• <code>/start</code>: Abre el panel principal interactivo."
         )
-        await notifications.enviar_alerta(txt)
+        await notifications.enviar_mensaje_interactivo(txt, chat_id=chat_id)
     elif text_strip == "/generar_salud":
-        await manejar_generar_post("salud", solo_texto=False)
+        await manejar_generar_post(chat_id, "salud", solo_texto=False)
     elif text_strip == "/generar_negocio":
-        await manejar_generar_post("negocio", solo_texto=False)
+        await manejar_generar_post(chat_id, "negocio", solo_texto=False)
     elif text_strip == "/texto_salud":
-        await manejar_generar_post("salud", solo_texto=True)
+        await manejar_generar_post(chat_id, "salud", solo_texto=True)
     elif text_strip == "/texto_negocio":
-        await manejar_generar_post("negocio", solo_texto=True)
-    elif text_strip == "/cola":
+        await manejar_generar_post(chat_id, "negocio", solo_texto=True)
+    elif text_strip == "/cola" and perfil.get("rol") == "admin":
         contenido = cargar_json()
         pendientes = [p for p in contenido if p.get("estado") == "aprobado" and not p.get("fecha_publicacion")]
         if not pendientes:
-            await notifications.enviar_alerta("📋 <b>COLA VACÍA:</b> No tienes publicaciones agendadas para el futuro.")
+            await notifications.enviar_alerta("📋 <b>COLA VACÍA:</b> No tienes publicaciones agendadas para el futuro.", chat_id=chat_id)
         else:
             txt = "📋 <b>COLA DE PUBLICACIONES AGENDADAS:</b>\n\n"
             for idx, p in enumerate(pendientes):
                 txt += f"{idx+1}. <code>{p['id']}</code> - Categoría: <b>{p.get('categoria_imagen')}</b> (Programado)\n"
-            await notifications.enviar_alerta(txt)
+            await notifications.enviar_alerta(txt, chat_id=chat_id)
     elif text_strip == "/cancelar":
-        USER_STATES[TELEGRAM_CHAT_ID] = None
-        await notifications.enviar_alerta("👍 Flujo cancelado. Volvemos al inicio.")
+        USER_STATES[chat_id] = None
+        await notifications.enviar_alerta("👍 Flujo cancelado. Volvemos al inicio.", chat_id=chat_id)
     else:
         await notifications.enviar_alerta(
-            "🤖 <b>Sinergia Guardián:</b> No entendí ese comando. Escribe <code>/start</code> para abrir el panel de control táctil de tu bot."
+            "🤖 <b>Sinergia Guardián:</b> No entendí ese comando. Escribe <code>/start</code> para abrir el panel de control interactivo de tu bot.",
+            chat_id=chat_id
         )
 
 async def bucle_escucha_telegram():
@@ -402,7 +558,7 @@ async def bucle_escucha_telegram():
     offset = 0
     
     try:
-        await enviar_menu_inicio()
+        await enviar_menu_inicio(TELEGRAM_CHAT_ID)
     except Exception as e:
         print(f"Error al enviar menú inicial: {e}")
         
@@ -426,8 +582,8 @@ async def bucle_escucha_telegram():
                                 chat = msg.get("chat", {})
                                 chat_id = str(chat.get("id"))
                                 
-                                if chat_id == str(TELEGRAM_CHAT_ID) and text:
-                                    await manejar_mensaje_texto(text)
+                                if text:
+                                    await manejar_mensaje_texto(chat_id, text, msg.get("from", {}))
                                     
             except asyncio.CancelledError:
                 break

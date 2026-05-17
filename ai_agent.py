@@ -78,7 +78,7 @@ def calificar_prospecto(mensaje):
         print(f"Error calificador Gemini Cloud: {e}")
         return "Bajo"
 
-def generar_copy_ia(id_publicacion, whatsapp_phone):
+def generar_copy_ia(id_publicacion, whatsapp_phone, custom_store_url=None):
     """
     Genera un texto persuasivo (copywriting) para redes sociales usando Gemini o Gemma 4 Local.
     """
@@ -134,8 +134,11 @@ def generar_copy_ia(id_publicacion, whatsapp_phone):
     )
 
     # Enlace de la tienda
-    store_name = os.getenv("GANO_ITOUCH_STORE", "joherobacafe")
-    store_url = f"https://peru.ganoitouch.biz/{store_name}"
+    if custom_store_url:
+        store_url = custom_store_url
+    else:
+        store_name = os.getenv("GANO_ITOUCH_STORE", "joherobacafe")
+        store_url = f"https://peru.ganoitouch.biz/{store_name}"
     
     prompt = (
         f"{system_context}\n"

@@ -8,11 +8,12 @@ load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-async def enviar_alerta(mensaje):
+async def enviar_alerta(mensaje, chat_id=None):
     """
     Envía un mensaje a Telegram en formato HTML de forma asíncrona.
     """
-    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+    target_chat = chat_id if chat_id else TELEGRAM_CHAT_ID
+    if not TELEGRAM_TOKEN or not target_chat:
         print(">> [Telegram] Error: Faltan credenciales en el .env")
         return False
         
@@ -26,7 +27,7 @@ async def enviar_alerta(mensaje):
     mensaje_html = mensaje_html.replace("*", "</b>", 1) # Cierre básico
     
     payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
+        "chat_id": target_chat,
         "text": f"🤖 <b>ALERTA SINERGIA BOT</b>\n\n{mensaje}",
         "parse_mode": "HTML"
     }
@@ -43,16 +44,17 @@ async def enviar_alerta(mensaje):
         print(f">> [Telegram] Error de conexión: {e}")
         return False
 
-async def enviar_mensaje_interactivo(mensaje, reply_markup=None):
+async def enviar_mensaje_interactivo(mensaje, reply_markup=None, chat_id=None):
     """
     Envía un mensaje de texto HTML con botones interactivos opcionales.
     """
-    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+    target_chat = chat_id if chat_id else TELEGRAM_CHAT_ID
+    if not TELEGRAM_TOKEN or not target_chat:
         return None
         
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
+        "chat_id": target_chat,
         "text": mensaje,
         "parse_mode": "HTML"
     }
@@ -69,17 +71,18 @@ async def enviar_mensaje_interactivo(mensaje, reply_markup=None):
         print(f">> [Telegram] Error interactivo: {e}")
     return None
 
-async def enviar_foto_interactiva(foto_path, caption, reply_markup=None):
+async def enviar_foto_interactiva(foto_path, caption, reply_markup=None, chat_id=None):
     """
     Envía una fotografía con una descripción HTML y botones interactivos.
     """
-    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+    target_chat = chat_id if chat_id else TELEGRAM_CHAT_ID
+    if not TELEGRAM_TOKEN or not target_chat:
         return None
         
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendPhoto"
     
     data = aiohttp.FormData()
-    data.add_field('chat_id', str(TELEGRAM_CHAT_ID))
+    data.add_field('chat_id', str(target_chat))
     data.add_field('caption', caption)
     data.add_field('parse_mode', 'HTML')
     if reply_markup:
@@ -103,16 +106,17 @@ async def enviar_foto_interactiva(foto_path, caption, reply_markup=None):
         print(f">> [Telegram] Error interactivo de foto: {e}")
     return None
 
-async def editar_mensaje(message_id, nuevo_texto, reply_markup=None):
+async def editar_mensaje(message_id, nuevo_texto, reply_markup=None, chat_id=None):
     """
     Modifica un mensaje de texto enviado anteriormente usando HTML.
     """
-    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+    target_chat = chat_id if chat_id else TELEGRAM_CHAT_ID
+    if not TELEGRAM_TOKEN or not target_chat:
         return False
         
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/editMessageText"
     payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
+        "chat_id": target_chat,
         "message_id": message_id,
         "text": nuevo_texto,
         "parse_mode": "HTML"
@@ -128,16 +132,17 @@ async def editar_mensaje(message_id, nuevo_texto, reply_markup=None):
         print(f">> [Telegram] Error al editar mensaje: {e}")
     return False
 
-async def editar_caption(message_id, nuevo_caption, reply_markup=None):
+async def editar_caption(message_id, nuevo_caption, reply_markup=None, chat_id=None):
     """
     Modifica la descripción HTML y botones de una fotografía enviada anteriormente.
     """
-    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+    target_chat = chat_id if chat_id else TELEGRAM_CHAT_ID
+    if not TELEGRAM_TOKEN or not target_chat:
         return False
         
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/editMessageCaption"
     payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
+        "chat_id": target_chat,
         "message_id": message_id,
         "caption": nuevo_caption,
         "parse_mode": "HTML"
