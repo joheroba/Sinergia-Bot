@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import random
+import aiohttp
 from datetime import datetime
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
@@ -53,11 +54,10 @@ async def activar_boton_whatsapp(page):
     """
     try:
         print(">> [Botón CTA] Buscando opción de WhatsApp...")
-        # Los selectores de Meta cambian frecuentemente. Buscamos por texto y roles comunes.
         selectors = [
             'div[role="button"]:has-text("WhatsApp")',
             'div[aria-label="Recibir mensajes de WhatsApp"]',
-            'i[style*="background-image"][class*="whatsapp"]' # Icono de WhatsApp
+            'i[style*="background-image"][class*="whatsapp"]'
         ]
         
         for sel in selectors:
@@ -74,11 +74,52 @@ async def activar_boton_whatsapp(page):
         print(f">> [Botón CTA] Error u omisión: {e}")
         return False
 
+async def publicar_en_facebook_api(page_id, access_token, texto, ruta_imagen=None):
+    """
+    Publica en Facebook de forma oficial y ultra-rápida usando la API de Graph de Meta (SaaS).
+    """
+    if ruta_imagen and os.path.exists(ruta_imagen):
+        url = f"https://graph.facebook.com/v18.0/{page_id}/photos"
+        data = aiohttp.FormData()
+        data.add_field("caption", texto)
+        data.add_field("access_token", access_token)
+        with open(ruta_imagen, "rb") as f:
+            data.add_field("source", f, filename=os.path.basename(ruta_imagen))
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(url, data=data) as response:
+                        res_json = await response.json()
+                        if response.status == 200 and "id" in res_json:
+                            print(f">> [Meta API] Post con foto publicado exitosamente: {res_json['id']}")
+                            return True
+                        else:
+                            print(f">> [Meta API] Error: {res_json}")
+            except Exception as e:
+                print(f">> [Meta API] Error de conexión: {e}")
+    else:
+        url = f"https://graph.facebook.com/v18.0/{page_id}/feed"
+        payload = {
+            "message": texto,
+            "access_token": access_token
+        }
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, json=payload) as response:
+                    res_json = await response.json()
+                    if response.status == 200 and "id" in res_json:
+                        print(f">> [Meta API] Post de texto publicado exitosamente: {res_json['id']}")
+                        return True
+                    else:
+                        print(f">> [Meta API] Error: {res_json}")
+        except Exception as e:
+            print(f">> [Meta API] Error de conexión: {e}")
+            
+    return False
+
 async def publicar_en_meta(context, post):
     page = await context.new_page()
     whatsapp_phone = os.getenv("WHATSAPP_PHONE", "tu-numero")
     
-    # Generar texto con IA si está vacío
     if not post.get("texto") or post.get("texto") == "":
         print(f">> [IA] Generando texto para {post['id']}...")
         post["texto"] = ai_agent.generar_copy_ia(post.get("id"), whatsapp_phone)
@@ -87,7 +128,7 @@ async def publicar_en_meta(context, post):
     
     if "login" in page.url:
         print(">> Esperando login manual en monitor web...")
-        await notifications.enviar_alerta("⚠️ *ATENCIÓN:* Facebook solicita Login Manual en el Monitor Web. Por favor entra a Chrome y pon tu clave.")
+        await notifications.enviar_alerta("⚠️ *ATENCIÓN:* Facebook solicita Login Manual en el Monitor Web. Por favor entra a Chrome y pon tu clave.", chat_id=post.get("chat_id"))
         await page.wait_for_url("**/latest/composer**", timeout=0)
 
     try:
@@ -96,10 +137,9 @@ async def publicar_en_meta(context, post):
         await caja_texto.wait_for(state="visible", timeout=20000)
         await caja_texto.fill(post["texto"])
         
-        # 2. Brandeo e Imagen (Omitir completamente si es un post de solo texto)
+        # 2. Brandeo e Imagen
         ruta_branded = None
         if not post.get("solo_texto", False):
-            # Priorizar la imagen específica creada para este borrador
             if post.get("ruta_imagen_local") and os.path.exists(post["ruta_imagen_local"]):
                 ruta_branded = post["ruta_imagen_local"]
                 print(f">> [Brandeo] Usando imagen específica del borrador: {ruta_branded}")
@@ -119,13 +159,13 @@ async def publicar_en_meta(context, post):
                 # 3. Intentar activar botón de WhatsApp CTA
                 await activar_boton_whatsapp(page)
             else:
-                print(">> [Composer] Publicando en formato de SOLO TEXTO (no se especificó o no existe imagen).")
+                print(">> [Composer] Publicando en formato de SOLO TEXTO.")
 
         # 4. Publicar
         btn_publicar = page.locator('div[aria-label="Publicar"], button:has-text("Publicar")').last
         await btn_publicar.click()
         print(f">> [OK] Publicación {post['id']} enviada con éxito.")
-        await notifications.enviar_alerta(f"✅ *ÉXITO:* He publicado el producto `{post['id']}` con IA y Brandeo. ¡Listos para recibir prospectos!")
+        await notifications.enviar_alerta(f"✅ <b>ÉXITO AUTOMÁTICO:</b> He publicado tu post programado sobre <code>{post.get('categoria_imagen')}</code> directamente en tu FanPage.", chat_id=post.get("chat_id"))
         await page.wait_for_timeout(5000)
         return True
 
@@ -145,21 +185,83 @@ async def main():
         print("No hay posts pendientes.")
         return
 
-    async with async_playwright() as p:
-        context = await p.chromium.launch_persistent_context(
-            user_data_dir=USER_DATA_DIR,
-            headless=False,
-            args=["--disable-blink-features=AutomationControlled", "--no-sandbox"]
-        )
-        
-        for post in posts_pendientes:
-            exito = await publicar_en_meta(context, post)
-            if exito:
-                post["fecha_publicacion"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                await guardar_contenido(contenido)
-            await asyncio.sleep(10)
+    # Cargar base de datos de afiliados
+    afiliados = {}
+    if os.path.exists("afiliados.json"):
+        try:
+            with open("afiliados.json", "r", encoding="utf-8") as f:
+                afiliados = json.load(f)
+        except Exception as e:
+            print(f"Error cargando afiliados: {e}")
+
+    # Separar los posts en los que usan API (Graph API) y los que usan Navegador (Playwright)
+    posts_api = []
+    posts_playwright = []
+
+    for post in posts_pendientes:
+        chat_id = post.get("chat_id")
+        if not chat_id:
+            chat_id = os.getenv("TELEGRAM_CHAT_ID")
+            post["chat_id"] = chat_id
             
-        await context.close()
+        perfil = afiliados.get(str(chat_id), {})
+        page_id = perfil.get("facebook_page_id")
+        access_token = perfil.get("facebook_access_token")
+        
+        # Verificar si cumple con la fecha de publicación (solo si es programado)
+        fecha_prog_str = post.get("fecha_programada")
+        if fecha_prog_str:
+            try:
+                fecha_prog = datetime.strptime(fecha_prog_str, "%Y-%m-%d %H:%M:%S")
+                if datetime.now() < fecha_prog:
+                    continue # Aún no es la hora
+            except Exception as e:
+                print(f"Error procesando fecha programada: {e}")
+                
+        if page_id and access_token:
+            posts_api.append((post, page_id, access_token))
+        elif perfil.get("rol") == "admin" or str(chat_id) == os.getenv("TELEGRAM_CHAT_ID"):
+            posts_playwright.append(post)
+        else:
+            print(f">> [Ignorado] El post {post['id']} pertenece al afiliado {perfil.get('nombre', chat_id)} pero no tiene API configurada.")
+
+    # 1. Procesar posts vía API Oficial de Meta (sin abrir navegador, ultra-veloz, en paralelo)
+    async def publicar_api_y_actualizar(post, p_id, token):
+        exito = await publicar_en_facebook_api(p_id, token, post["texto"], post.get("ruta_imagen_local"))
+        if exito:
+            post["fecha_publicacion"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            await notifications.enviar_alerta(
+                f"✅ <b>ÉXITO AUTOMÁTICO (API):</b> He publicado tu post programado sobre <code>{post.get('categoria_imagen')}</code> directamente en tu FanPage.",
+                chat_id=post["chat_id"]
+            )
+        else:
+            await notifications.enviar_alerta(
+                f"❌ <b>ALERTA DE ERROR (API):</b> No se pudo publicar tu post programado en tu FanPage. Revisa tu token de Facebook.",
+                chat_id=post["chat_id"]
+            )
+
+    if posts_api:
+        print(f">> [Meta API] Procesando {len(posts_api)} posts de afiliados vía API...")
+        tareas = [publicar_api_y_actualizar(post, p_id, token) for post, p_id, token in posts_api]
+        await asyncio.gather(*tareas)
+        await guardar_contenido(contenido)
+
+    # 2. Procesar posts de Jorge vía Playwright (navegador persistente)
+    if posts_playwright:
+        print(f">> [Playwright] Procesando {len(posts_playwright)} posts de Jorge Admin vía Navegador...")
+        async with async_playwright() as p:
+            context = await p.chromium.launch_persistent_context(
+                user_data_dir=USER_DATA_DIR,
+                headless=False,
+                args=["--disable-blink-features=AutomationControlled", "--no-sandbox"]
+            )
+            for post in posts_playwright:
+                exito = await publicar_en_meta(context, post)
+                if exito:
+                    post["fecha_publicacion"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    await guardar_contenido(contenido)
+                await asyncio.sleep(10)
+            await context.close()
 
 if __name__ == "__main__":
     asyncio.run(main())
