@@ -59,6 +59,9 @@ def crear_tarjeta_viral(texto, categoria, index):
     
     # 1. MONTAR FOTOGRAFÍA FÍSICA A LA PANTALLA (CON FILTRADO HD Y SELECCIÓN INTELIGENTE)
     carpeta_assets = "assets_oficiales"
+    if os.path.exists(os.path.join(carpeta_assets, "assets_oficiales")):
+        carpeta_assets = os.path.join(carpeta_assets, "assets_oficiales")
+        
     try:
         # Filtrar imágenes que pesen más de 200 KB para evitar iconos pixelados extraídos de los PDF
         fotos_grandes = []
@@ -66,8 +69,8 @@ def crear_tarjeta_viral(texto, categoria, index):
             if f.endswith(('.jpg', '.png', '.jpeg')):
                 ruta_temp = os.path.join(carpeta_assets, f)
                 if os.path.getsize(ruta_temp) >= 200000: # 200 KB mínimo para HD
-                    fotos_grandes.append(f)
-                    
+                     fotos_grandes.append(f)
+                     
         if not fotos_grandes:
             raise Exception("No hay fotos grandes en assets_oficiales")
             
@@ -104,6 +107,17 @@ def crear_tarjeta_viral(texto, categoria, index):
         img = ImageOps.fit(fondo_base, (ancho, alto), method=Image.Resampling.LANCZOS)
     except Exception as e:
         print(f">> [Fábrica Visual] Alerta al cargar imagen: {e}. Usando fondo de respaldo.")
+        try:
+            import notifications
+            import os
+            import asyncio
+            chat_id = os.getenv("TELEGRAM_CHAT_ID")
+            if chat_id:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.create_task(notifications.enviar_alerta(f"⚠️ <b>[Fábrica Visual]</b> Error al procesar imagen: <code>{e}</code>. Se usó el fondo de respaldo marrón.", chat_id=chat_id))
+        except Exception:
+            pass
         # Backup Background en caso de falla
         img = Image.new('RGBA', (ancho, alto), (54, 25, 11, 255))
 
