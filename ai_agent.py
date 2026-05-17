@@ -1,0 +1,143 @@
+import google.generativeai as genai
+import os
+import json
+from dotenv import load_dotenv
+
+load_dotenv()
+
+def calificar_prospecto(mensaje):
+    """
+    Analiza el mensaje del cliente con IA para determinar su nivel de interés.
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return "Bajo"
+
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel('gemini-2.5-flash')
+    
+    prompt = (
+        f"Analiza este mensaje de un prospecto de Gano Excel: '{mensaje}'. "
+        f"Clasifica su nivel de interés en una sola palabra: 'Bajo', 'Medio' o 'Alto'. "
+        f"Considera 'Alto' si pregunta por precios, afiliación o productos específicos. "
+        f"Responde ÚNICAMENTE con una de las tres palabras."
+    )
+    
+    try:
+        response = model.generate_content(prompt)
+        interes = response.text.strip().replace("*", "").replace(".", "")
+        return interes if interes in ["Bajo", "Medio", "Alto"] else "Bajo"
+    except Exception as e:
+        print(f"Error calificador: {e}")
+        return "Bajo"
+
+def generar_copy_ia(id_publicacion, whatsapp_phone):
+    """
+    Genera un texto persuasivo (copywriting) para redes sociales usando Gemini.
+    """
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        print(">> [IA] Error: No se encontró GEMINI_API_KEY en el entorno.")
+        return ""
+
+    # Determinar categoría buscando en contenido_ganoderma.json
+    categoria = "bienestar"
+    try:
+        if os.path.exists("contenido_ganoderma.json"):
+            with open("contenido_ganoderma.json", "r", encoding="utf-8") as file:
+                contenido = json.load(file)
+                for post in contenido:
+                    if post.get("id") == id_publicacion:
+                        categoria = post.get("categoria_imagen", "bienestar")
+                        break
+    except Exception as e:
+        print(f">> [IA] Error al leer la categoría del post: {e}")
+
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel('gemini-2.5-flash')
+
+    # Ajustar el enfoque según la categoría del post
+    if categoria in ["bebibles", "clasico", "bebidas"]:
+        system_context = (
+            "Eres un experto en Marketing de Afiliados y copywriter profesional para Gano Excel / Gano iTouch.\n"
+            "Tu objetivo es redactar un post persuasivo de Facebook para vender bebidas premium enriquecidas con Ganoderma Lucidum (Café 3 en 1, Café Classic negro o Chocolate).\n"
+            "Enfatiza la combinación de sabor delicioso, bienestar diario, energía natural sostenida y antioxidantes.\n"
+        )
+    elif categoria == "salud":
+        system_context = (
+            "Eres un experto en Marketing de Afiliados y copywriter profesional para Gano Excel / Gano iTouch.\n"
+            "Tu objetivo es redactar un post persuasivo de Facebook enfocado en la salud y el sistema inmunológico.\n"
+            "Enfatiza el poder del extracto 100% soluble de Ganoderma Lucidum como un súper alimento antioxidante, regulador de defensas y promotor del bienestar general.\n"
+        )
+    elif categoria == "negocio":
+        system_context = (
+            "Eres un experto en Marketing de Afiliados y copywriter profesional para Gano Excel / Gano iTouch.\n"
+            "Tu objetivo es redactar un post de Facebook persuasivo enfocado en la oportunidad de negocio y libertad financiera con Network Marketing.\n"
+            "Invita a las personas a generar ingresos residuales duraderos y construir su propia red comercial desde casa distribuyendo bienestar con el gigante malayo Gano Excel.\n"
+        )
+    else:
+        system_context = (
+            "Eres un experto en Marketing de Afiliados y copywriter profesional para Gano Excel / Gano iTouch.\n"
+            "Tu objetivo es redactar un post persuasivo de Facebook sobre suplementos premium enriquecidos con Ganoderma Lucidum.\n"
+        )
+
+    # Restricciones éticas (Evitar claims de curación de enfermedades graves para cumplir regulaciones)
+    system_context += (
+        "RESTRICCIÓN ÉTICA ABSOLUTA: Evita promesas médicas curativas falsas o Claims como decir que cura el cáncer, diabetes, etc.\n"
+        "En su lugar, usa un lenguaje de 'refuerzos inmunológicos lícitos', vitalidad, energía, nutrición celular profunda y antioxidantes con una matriz Sinergista.\n"
+        "Formato del post:\n"
+        "- Comienza con un hook/llamado a la acción impactante con emojis.\n"
+        "- Explica 3 beneficios clave de forma muy atractiva y concisa.\n"
+        "- Termina con un llamado a la acción claro para comprar online o enviar un mensaje.\n"
+        "- Escribe con tono enérgico, inspirador y profesional.\n"
+        "- Incluye hashtags estratégicos y mantén el texto relativamente corto pero muy persuasivo.\n"
+    )
+
+    # Enlace de la tienda
+    store_name = os.getenv("GANO_ITOUCH_STORE", "joherobacafe")
+    store_url = f"https://peru.ganoitouch.biz/{store_name}"
+    
+    prompt = (
+        f"{system_context}\n"
+        f"Por favor redacta la publicación correspondiente para el ID '{id_publicacion}' (Categoría: {categoria}).\n"
+        f"Asegúrate de incluir de forma natural el enlace a mi tienda oficial de afiliado al final:\n"
+        f"👉 {store_url}\n"
+        f"Y menciona que pueden escribirme al WhatsApp: +{whatsapp_phone} si tienen dudas.\n"
+        f"Responde únicamente con el texto completo del post finalizado, listo para copiar y pegar, sin explicaciones ni notas adicionales."
+    )
+
+    try:
+        response = model.generate_content(prompt)
+        return response.text.strip()
+    except Exception as e:
+        print(f"Error al generar copy con IA: {e}")
+        # Fallback si falla la API
+        if categoria == "negocio":
+            return (
+                "¿Y si tu bebida de cada mañana comenzara a pagarte grandes dividendos? 📈☕\n"
+                "Construye autonomía financiera y genera ingresos residuales desde la comodidad de tu hogar asociándote con un gigante mundial del bienestar.\n\n"
+                "👉 Conviértete en distribuidor y empieza a crecer hoy mismo:\n"
+                f"🔗 {store_url}\n\n"
+                f"O escríbeme directamente al WhatsApp (+{whatsapp_phone}) para darte todos los detalles de la duplicación comercial. 🚀"
+            )
+        else:
+            return (
+                "¡Dale a tu cuerpo el escudo natural que se merece! 🛡️🍄\n"
+                "Empieza tus mañanas llenándote de energía real y antioxidantes profundos gracias a las infusiones enriquecidas con Ganoderma Lucidum soluble de Gano Excel.\n\n"
+                "👉 Pídelo 100% seguro en mi portal oficial y recíbelo en casa:\n"
+                f"🔗 {store_url}\n\n"
+                f"Dudas o pedidos rápidos al WhatsApp (+{whatsapp_phone}). ¡Sabor y vitalidad garantizada! ☕✨"
+            )
+
+if __name__ == "__main__":
+    # Prueba rápida con codificación de consola segura
+    import sys
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except AttributeError:
+        pass
+    
+    copy_text = generar_copy_ia("publicacion_06", "51999122333")
+    print("Test Copy:\n", copy_text)
+    print("\nTest Scoring:", calificar_prospecto("Hola, ¿cuánto cuesta el paquete ESP3 para afiliarme?"))
+

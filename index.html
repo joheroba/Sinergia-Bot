@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="2">
+    <title>SINERGIA BOT - MONITOR QR</title>
+    <style>
+        body {
+            background: #121212;
+            color: #00ffcc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+            border: 2px solid #00ffcc;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+            background: #1e1e1e;
+        }
+        img {
+            max-width: 500px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        h1 { margin-bottom: 10px; font-size: 1.5rem; }
+        p { color: #aaaaaa; font-size: 0.9rem; }
+        .status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #00ffcc;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="status"></div> <h1>ESPEJO VIVO - SINERGIA BOT</h1>
+        <p>Escanea este código desde tu celular. Auto-refresco: 2s</p>
+        <img src="qr_login.png?t=" id="qr-img">
+    </div>
+
+    <script>
+        // Forzamos la recarga de la imagen para evitar el caché del navegador
+        document.getElementById('qr-img').src = "qr_login.png?t=" + new Date().getTime();
+    </script>
+</body>
+</html>

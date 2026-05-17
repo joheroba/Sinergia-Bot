@@ -4,6 +4,9 @@ import random
 from datetime import datetime
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
+import notifications
+import crm_local
+import ai_agent
 
 load_dotenv()
 
@@ -81,110 +84,154 @@ async def atender_prospectos():
     print("==================================================")
     print("      SINERGIA SALES BOT (WHATSAPP CANALIZADO)    ")
     print("==================================================")
-    print("Iniciando motor Playwright en modo visible. WhatsApp Web tomará control.\n")
-    
     async with async_playwright() as p:
+        # Leemos si queremos ver el navegador (False) o no (True) desde el .env
+        is_headless = os.getenv("HEADLESS_MODE", "False").lower() == "true"
+        
+        # --- CONFIGURACIÓN "MONITOR DE MENTIRA" (Xvfb) ---
+        user_agent_disfraz = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        
         context = await p.chromium.launch_persistent_context(
             user_data_dir=WP_DATA_DIR,
-            headless=False, # Obligatoriamente visible para que vincules con QR si es cuenta nueva
-            args=["--disable-blink-features=AutomationControlled"]
+            headless=False, # ¡Forzado a False para que trabaje sobre Xvfb!
+            user_agent=user_agent_disfraz,
+            viewport={"width": 1280, "height": 720}, # Tamaño estándar para que el QR sea visible
+            locale="es-ES",
+            timezone_id="America/Lima",
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox"
+            ]
         )
         page = context.pages[0] if context.pages else await context.new_page()
+
+        # Inyección de ADN Humano: Borramos rastros de automatización dinámicamente
+        await page.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+        """)
         
         print(">> Entrando a WhatsApp Web...")
-        # Cambiado load por domcontentloaded para que arranque rapido en conexiones de Peru, y se eleva el timeout.
         await page.goto("https://web.whatsapp.com/", wait_until="domcontentloaded", timeout=120000)
         
         print(">> Esperando autenticación. (¡Si te pide escanear el Código QR, saca tu celular y hazlo ahora!)")
         
-        # WhatsApp tarda en cargar una vez que pasas el QR. El panel de mensajes tiene la palabra "Chats" normalmente.
         try:
-             # Selector dinámico universal: #pane-side es el bloque a la izquierda de todos los chats
-             await page.wait_for_selector('#pane-side', timeout=300000) # 5 minutos para que escanees tranquilo
-             print("\n>> [✓] ¡Sesión capturada con éxito! Las líneas telefónicas están vivas.")
-        except:
-             print(">> [X] Parece que tardaste mucho en escanear o el internet está lento. Vuelve a correr el script.")
-             await context.close()
+             # --- SISTEMA DE VINCULACIÓN POR CÓDIGO (NÚMERO DE TELÉFONO) ---
+             phone_number = os.getenv("WHATSAPP_PHONE")
+             if phone_number:
+                 phone_number = phone_number.replace(" ", "").replace("-", "")
+                 print(f">> [PASO 1] Iniciando vinculación por número: {phone_number}")
+                 try:
+                     # Hacer clic en "Iniciar sesión con número de teléfono"
+                     btn_phone = page.locator('span:has-text("Iniciar sesión con número de teléfono"), [role="button"]:has-text("Inici")')
+                     await btn_phone.first.wait_for(timeout=60000) # 60 segundos de paciencia extrema
+                     await btn_phone.first.click()
+                     
+                     # Ingresar el número
+                     print(">> [PASO 3] Esperando casilla de número...")
+                     input_phone = page.locator('input[dir="ltr"], input[aria-label*="número de teléfono"]')
+                     await input_phone.wait_for(timeout=60000)
+                     await input_phone.fill(phone_number)
+                     
+                     print(f">> [PASO 3] Número {phone_number} ingresado. Presionando 'Siguiente'...")
+                     btn_next = page.locator('button:has-text("Siguiente"), [role="button"]:has-text("Siguiente")')
+                     await btn_next.wait_for(timeout=20000)
+                     await btn_next.click()
+
+                     # Esperar a que aparezca el código
+                     print(">> [PASO 4] Generando código de 8 dígitos...")
+                     code_container = page.locator('div[data-link-code]')
+                     await code_container.wait_for(timeout=60000) 
+                     
+                     await page.screenshot(path="qr_login.png")
+                     
+                     pairing_code = await code_container.inner_text()
+                     print("\n" + "!"*45)
+                     print(f"  TU CÓDIGO DE VINCULACIÓN ES: {pairing_code}")
+                     print("!"*45)
+                     print(">> [PASO 5] Código listo. Ingrésalo en tu celular.")
+                     
+                 except Exception as e:
+                     print(f">> [!] Error en flujo de número: {e}. Intentando QR normal...")
+                     await page.screenshot(path="error_vinculacion.png") 
+
+             # --- SISTEMA DE CAPTURA DE QR (BACKUP) ---
+             print(">> Buscando panel de chats o código QR...")
+             for i in range(120): # 6 minutos total
+                 try:
+                    if await page.locator('#pane-side').count() > 0:
+                        print(">> [INFO] ¡CONEXIÓN EXITOSA! Entrando al panel de control...")
+                        break
+                    await page.screenshot(path="qr_login.png", timeout=3000)
+                 except: pass
+                 await asyncio.sleep(3)
+
+             await page.wait_for_selector('#pane-side', timeout=360000)
+             print("\n>> [✓] ¡Sesión capturada con éxito!")
+             await notifications.enviar_alerta("🟢 *CONECTADO:* El Bot de WhatsApp de Sinergia está ACTIVO y atendiendo prospectos en el servidor.")
+             if os.path.exists("qr_login.png"): os.remove("qr_login.png")
+        except Exception as e:
+             print(f">> [X] No se pudo capturar la sesión: {str(e)}")
+             await page.screenshot(path="error_autenticacion.png")
              return
 
         print(">> El sistema de Inbound Marketing entra en MODO VIGÍA...")
-        print(">> (Revisaremos nuevos leads cada 15 segundos)")
-        
-        # Diccionario para "recordar" a quién le dimos bienvenida.
-        # En una arquitectura masiva se guardaría en json, por ahora en RAM temporal sirve para una corrida.
         memoria_prospectos = {}
 
-        # Loop infinito cuidando tu red. "Ctrl+C" en la terminal apagará todo.
         while True:
             try:
-                # 1. Detectar banderas de no leídos. WhatsApp usa span elements con 'label' o texto plano con numeros enteros.
-                # Esta tactica busca el nodo que alberga el título del chat y da clicks a los [!No leidos].
-                # Usaremos xpath que agarra el boton de chat si contiene un "span" con atributo aria-label que dice 'no leíd'
                 chats_no_leidos_loc = page.locator('span[aria-label*="no leíd"], span[aria-label*="no leid"]')
-                
                 cantidad = await chats_no_leidos_loc.count()
                 if cantidad > 0:
-                    print(f"[{datetime.now().strftime('%H:%M:%S')}] 🚨 ¡Detectamos {cantidad} prospectos exigiendo respuesta!")
-                    
-                    # Vamos a entrar al PRIMER chat no leído (por FIFO inverso o LIFO)
+                    print(f"[{datetime.now().strftime('%H:%M:%S')}] 🚨 ¡Detectamos {cantidad} prospectos!")
                     await chats_no_leidos_loc.first.click(force=True)
-                    await page.wait_for_timeout(2000) # Dejar que cargue el hilo 
+                    await page.wait_for_timeout(2000)
                     
-                    # 2. Extraer el contexto (Nombre u Origen de quien nos habla)
-                    # El nombre suele estar arriba en el encabezado
                     header_loc = page.locator('header span[dir="auto"]').first
                     nombre_chat = await header_loc.inner_text() if await header_loc.count() > 0 else "Desconocido"
                     
-                    # 3. Leer el último mensaje recibido para ver si puso "1", "2" o es primerizo
                     ultimos_mensajes_loc = page.locator('div[class*="message-in"] span.selectable-text[dir="ltr"]')
                     if await ultimos_mensajes_loc.count() > 0:
                         texto_recibido = await ultimos_mensajes_loc.last.inner_text()
                         texto_limpio = str(texto_recibido).strip().lower()
-                        print(f"   => [{nombre_chat}] Dijo: '{texto_limpio}'")
                         
-                        teclado_wa = page.locator('div[contenteditable="true"][data-tab="10"]').first
-                        if not await teclado_wa.is_visible():
-                             # A veces WP cambia tab ids. Agarramos por rol genérico
-                             teclado_wa = page.locator('div[title="Escribe un mensaje"], div[contenteditable="true"][role="textbox"]').last
-
-                        if teclado_wa:
-                            # Lógica Cerebro (State Machine básico)
+                        teclado_wa = page.locator('div[title="Escribe un mensaje"], div[contenteditable="true"][role="textbox"]').last
+                        if await teclado_wa.is_visible():
                             respuesta_inyeccion = ""
                             if texto_limpio in ["1", "uno", "comprar", "productos"]:
                                 respuesta_inyeccion = MENSAJE_COMPRA
-                            elif texto_limpio in ["2", "dos", "afiliarse", "negocio", "información"]:
+                            elif texto_limpio in ["2", "dos", "afiliarse", "negocio"]:
                                 respuesta_inyeccion = MENSAJE_AFILIACION
-                            elif texto_limpio in ["3", "tres", "cita", "agendar", "hablar"]:
+                            elif texto_limpio in ["3", "tres", "cita", "agendar"]:
                                 respuesta_inyeccion = MENSAJE_CITA
-                            elif texto_limpio in ["4", "cuatro", "salud", "ganoderma"]:
+                            elif texto_limpio in ["4", "cuatro", "salud"]:
                                 respuesta_inyeccion = MENSAJE_FAQ_PRODUCTO
-                            elif texto_limpio in ["5", "cinco", "duplicacion", "red"]:
+                            elif texto_limpio in ["5", "cinco", "duplicacion"]:
                                 respuesta_inyeccion = MENSAJE_FAQ_NEGOCIO
                             else:
-                                # Es un texto nuevo, probablemente un "Hola que tal info".
-                                # Miremos la memoria.
                                 if nombre_chat not in memoria_prospectos:
                                     respuesta_inyeccion = MENSAJE_BIENVENIDA
                                     memoria_prospectos[nombre_chat] = True
                                 else:
                                     respuesta_inyeccion = MENSAJE_ERROR
-                                
-                            # Mecánica Inyección (Teclado) -> Usar insert_text simula paste a portapapeles y envía rápido sin errores multilínea
-                            print("   => Canalizando el embudo con mensaje estructurado...")
+                            
+                            # --- NUEVA LÓGICA CRM FASE A ---
+                            print(f"   => [CRM] Procesando lead: {nombre_chat}")
+                            nivel_interes = ai_agent.calificar_prospecto(texto_recibido)
+                            crm_local.registrar_lead(nombre_chat, texto_recibido, nivel_interes)
+                            
+                            if nivel_interes == "Alto":
+                                await notifications.enviar_alerta(f"🔥 *LEAD CALIENTE:* {nombre_chat} está muy interesado. \n\nMensaje: _{texto_recibido}_")
+
                             await teclado_wa.click()
-                            await page.wait_for_timeout(500)
                             await page.keyboard.insert_text(respuesta_inyeccion)
                             await page.wait_for_timeout(500)
                             await page.keyboard.press("Enter")
-                            
-                            print("   => [✓] Respuesta de conversión enviada y chat limpiado del radar.")
-                            await page.wait_for_timeout(3000) # Respiro antes de saltar a otro cliente
-            
+                            print(f"   => [✓] Respuesta enviada a {nombre_chat}")
             except Exception as loop_error:
-                 # Errores DOM o desincronización
-                 print(f"   [Sistema] Recalibrando sensores de UI (Cambio de página WhatsApp detectado o lag).")
-                 
-            # Vigilancia de ahorro de CPU
+                 pass
             await page.wait_for_timeout(10000)
 
 if __name__ == "__main__":

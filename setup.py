@@ -35,12 +35,28 @@ def main():
     print("Ejemplo: https://peru.ganoitouch.biz/joherobacafe")
     url_tienda = input("Tu Enlace Replicado: ").strip()
     
-    # Escribir el .env (configuración oculta del sistema)
+    # Leer el .env existente para no borrar variables vitales (como GEMINI_API_KEY, TELEGRAM_TOKEN o WHATSAPP_PHONE)
+    env_vars = {}
+    if os.path.exists(".env"):
+        try:
+            with open(".env", "r", encoding="utf-8") as env_file:
+                for line in env_file:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        env_vars[k.strip()] = v.strip()
+        except Exception as e:
+            print(f"Advertencia al leer el .env actual: {e}")
+
+    # Actualizar o agregar las variables configuradas por este asistente
+    env_vars["FACEBOOK_PAGE_NAME"] = nombre_pagina
+    env_vars["GANO_ITOUCH_STORE"] = url_tienda
+
+    # Escribir el .env conservando todas las variables existentes
     try:
         with open(".env", "w", encoding="utf-8") as env_file:
-            # Sobrescribe el .env para dejar listo a este afiliado de forma personalizada
-            env_file.write(f"FACEBOOK_PAGE_NAME={nombre_pagina}\n")
-            env_file.write(f"GANO_ITOUCH_STORE={url_tienda}\n")
+            for k, v in env_vars.items():
+                env_file.write(f"{k}={v}\n")
         
         print("\n==========================================================")
         print("  ¡ÉXITO DIAMANTE! TU BOT AHORA ES ÚNICO.                 ")
