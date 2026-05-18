@@ -1,6 +1,7 @@
 import os
 import random
 import textwrap
+import asyncio
 from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
@@ -87,8 +88,8 @@ def crear_tarjeta_viral(texto, categoria, index):
                 if afines:
                     foto_elegida = afines[index % len(afines)]
         else: # negocio
-            # Obtener infografías de negocio, plan servilleta, fotos corporativas y láminas del plan oficial
-            fotos_negocio = [f for f in fotos_grandes if any(k in f.lower() for k in ["business", "plan_", "onetoone", "mr_leow", "pioir", "negocio", "gold", "jabon", "image", "captura"])]
+            # Obtener infografías de negocio, plan servilleta, fotos corporativas y láminas del plan oficial (excluyendo 'image' genérico para mayor variedad)
+            fotos_negocio = [f for f in fotos_grandes if any(k in f.lower() for k in ["business", "plan_", "onetoone", "mr_leow", "pioir", "negocio", "gold", "jabon"])]
             if fotos_negocio:
                 foto_elegida = fotos_negocio[index % len(fotos_negocio)]
             else:
@@ -109,8 +110,6 @@ def crear_tarjeta_viral(texto, categoria, index):
         print(f">> [Fábrica Visual] Alerta al cargar imagen: {e}. Usando fondo de respaldo.")
         try:
             import notifications
-            import os
-            import asyncio
             chat_id = os.getenv("TELEGRAM_CHAT_ID")
             if chat_id:
                 loop = asyncio.get_event_loop()
@@ -194,10 +193,9 @@ def crear_tarjeta_viral(texto, categoria, index):
     draw.text((x_logo, 1035), "Gano iTouch Oficial • Red de Mercadeo • Bienestar", font=fuente_logo, fill=(240, 240, 240))
 
     # EXPORTACIÓN GIGANTE (Calidad 98 sobre 100)
-    hoy = datetime.now().strftime("%Y%m%d%H%M%S")
     carpeta_destino = os.path.join("imagenes", categoria)
     os.makedirs(carpeta_destino, exist_ok=True)
-    ruta = os.path.join(carpeta_destino, f"hq_dynamic_post_{hoy}_{index}.jpg")
+    ruta = os.path.join(carpeta_destino, f"post_{index}.jpg")
     
     img_final = img.convert("RGB")
     img_final.save(ruta, quality=98)
@@ -207,8 +205,20 @@ def arrancar_la_fabrica():
     print("==================================================")
     print("  SINERGIA AUTO-CREATOR (FABRICA DE CONTENIDOS)   ")
     print("==================================================\n")
-    print("Generando material de Salud Inmunológica (Anti-Baneo Facebook)...")
     
+    # Sanación: Limpieza completa de cualquier archivo duplicado anterior de estilo viejo
+    print(">> [Sanación] Limpiando archivos duplicados con marcas de tiempo antiguas...")
+    for cat in ["salud", "negocio"]:
+        dir_cat = os.path.join("imagenes", cat)
+        if os.path.exists(dir_cat):
+            for file in os.listdir(dir_cat):
+                if file.startswith("hq_dynamic_post_") or file.endswith(".temp"):
+                    try:
+                        os.remove(os.path.join(dir_cat, file))
+                    except Exception:
+                        pass
+                        
+    print("\nGenerando material de Salud Inmunológica (Anti-Baneo Facebook)...")
     for idx, gancho_salud in enumerate(HOOKS_SALUD):
         ruta = crear_tarjeta_viral(gancho_salud, "salud", idx)
         print(f" [OK] Gráfico Salud creado: {ruta}")
@@ -218,7 +228,7 @@ def arrancar_la_fabrica():
         ruta = crear_tarjeta_viral(gancho_negocio, "negocio", idx)
         print(f" [OK] Gráfico Negocio creado: {ruta}")
         
-    print("\n[ÉXITO] ¡14 Nuevos Archivos Publicitarios inyectados en la base rotaiva!")
+    print("\n[ÉXITO] ¡14 Nuevos Archivos Publicitarios inyectados en la base rotativa!")
     print("Ahora Sinergia Bot (publisher.py) los agarrará y programará sin que muevas un dedo.")
 
 if __name__ == "__main__":
