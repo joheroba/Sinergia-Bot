@@ -163,8 +163,6 @@ def crear_tarjeta_viral(texto, categoria, index):
         # Backup Background en caso de falla
         img = Image.new('RGBA', (ancho, alto), (54, 25, 11, 255))
 
-    draw = ImageDraw.Draw(img, 'RGBA')
-    
     # Fuentes Premium High-Res para centrado y renderizado estético de alta definición
     if os.name != "nt":
         fuentes_elegantes = [
@@ -189,9 +187,15 @@ def crear_tarjeta_viral(texto, categoria, index):
     # 2. ALTERNAR CEREBROS DE DISEÑO ENTRE MINIMALISTA MASCULINO Y GLASS CORPORATE
     estilo = random.choice(["DISENO_ROLEX", "DISENO_CRISTAL"])
     
+    # Crear una capa de overlay transparente de la misma dimensión para blending de canal alfa correcto
+    overlay = Image.new('RGBA', img.size, (0, 0, 0, 0))
+    draw_overlay = ImageDraw.Draw(overlay, 'RGBA')
+    
     if estilo == "DISENO_ROLEX":
-        # Apagón General: Filtro humo oscuro al 60% sobre TODA la caja para exaltar la tipografía
-        draw.rectangle([(0,0), (ancho, alto)], fill=(10, 10, 10, 170))
+        # Filtro de contraste premium muy sutil para exaltar la tipografía sin oscurecer la foto
+        draw_overlay.rectangle([(0,0), (ancho, alto)], fill=(15, 12, 10, 95))
+        img = Image.alpha_composite(img, overlay)
+        draw = ImageDraw.Draw(img, 'RGBA')
         dibujar_word_wrap(draw, texto, fuente, 80, 0, ancho-160, alto - 100)
     else:
         # Modo Cristal: Fondo iluminado y letras dentro del recuadro transparente en medio
@@ -201,11 +205,13 @@ def crear_tarjeta_viral(texto, categoria, index):
         y_caja = (alto - caja_alto) // 2 - 50
         
         # Placa Glass
-        draw.rounded_rectangle(
+        draw_overlay.rounded_rectangle(
             [(padding, y_caja), (ancho - padding, y_caja + caja_alto)],
             radius=20, fill=(0, 0, 0, 160), outline=(255, 215, 0, 200), width=5
         )
-        draw.ellipse([(ancho//2 - 15, y_caja - 30), (ancho//2 + 15, y_caja)], fill=(255, 215, 0))
+        draw_overlay.ellipse([(ancho//2 - 15, y_caja - 30), (ancho//2 + 15, y_caja)], fill=(255, 215, 0, 255))
+        img = Image.alpha_composite(img, overlay)
+        draw = ImageDraw.Draw(img, 'RGBA')
         dibujar_word_wrap(draw, texto, fuente, padding + 20, y_caja, caja_ancho - 40, caja_alto)
 
     # 3. FIRMA CORPORATIVA Y LOGO DEL DISTRIBUIDOR (Watermark Superior)
