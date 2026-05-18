@@ -297,7 +297,12 @@ async def main():
         if page_id and access_token:
             posts_api.append((post, page_id, access_token))
         elif perfil.get("rol") == "admin" or str(chat_id) == os.getenv("TELEGRAM_CHAT_ID"):
-            posts_playwright.append(post)
+            env_page_id = os.getenv("FACEBOOK_PAGE_ID")
+            env_access_token = os.getenv("FACEBOOK_ACCESS_TOKEN")
+            if env_page_id and env_access_token:
+                posts_api.append((post, env_page_id, env_access_token))
+            else:
+                posts_playwright.append(post)
         else:
             print(f">> [Ignorado] El post {post['id']} pertenece al afiliado {perfil.get('nombre', chat_id)} pero no tiene API configurada.")
 

@@ -638,10 +638,126 @@ async def manejar_mensaje_texto(chat_id, text, from_user):
             chat_id=chat_id
         )
 
+async def auto_exchange_facebook_token():
+    app_id = os.getenv("FACEBOOK_APP_ID")
+    app_secret = os.getenv("FACEBOOK_APP_SECRET")
+    short_token = os.getenv("FACEBOOK_SHORT_TOKEN")
+    
+    if not (app_id and app_secret and short_token):
+        return
+        
+    print(">> [Meta Auto-Exchanger] Detectadas credenciales de intercambio. Iniciando...")
+    try:
+        # 1. Obtener token de larga duración del usuario
+        url = f"https://graph.facebook.com/v20.0/oauth/access_token?grant_type=fb_exchange_token&client_id={app_id}&client_secret={app_secret}&fb_exchange_token={short_token}"
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                res_data = await response.json()
+                if response.status != 200:
+                    print(f">> [Meta Auto-Exchanger] Error obteniendo long token: {res_data}")
+                    return
+                long_token = res_data.get("access_token")
+                
+                # 2. Obtener lista de páginas
+                pages_url = f"https://graph.facebook.com/v20.0/me/accounts?access_token={long_token}"
+                async with session.get(pages_url) as pages_response:
+                    pages_data = await pages_response.json()
+                    if pages_response.status != 200:
+                        print(f">> [Meta Auto-Exchanger] Error obteniendo páginas: {pages_data}")
+                        return
+                    
+                    pages_list = pages_data.get("data", [])
+                    if not pages_list:
+                        print(">> [Meta Auto-Exchanger] No se encontraron páginas asociadas a este token.")
+                        return
+                        
+                    # Buscar la página "Gano Excel"
+                    target_page = None
+                    for page in pages_list:
+                        if "gano excel" in page.get("name", "").lower():
+                            target_page = page
+                            break
+                            
+                    if not target_page:
+                        # Fallback a la primera página si no encuentra "Gano Excel"
+                        target_page = pages_list[0]
+                        print(f">> [Meta Auto-Exchanger] No se encontró 'Gano Excel'. Usando primera página disponible: {target_page.get('name')}")
+                    
+                    page_name = target_page.get("name")
+                    page_id = target_page.get("id")
+                    page_access_token = target_page.get("access_token")
+                    
+                    print(f">> [Meta Auto-Exchanger] ¡Éxito! Página vinculada: {page_name} (ID: {page_id})")
+                    
+                    # 3. Actualizar archivo .env local/servidor
+                    env_path = ".env"
+                    env_lines = []
+                    if os.path.exists(env_path):
+                        with open(env_path, "r", encoding="utf-8") as f:
+                            env_lines = f.readlines()
+                            
+                    new_lines = []
+                    keys_to_update = {
+                        "FACEBOOK_PAGE_ID": page_id,
+                        "FACEBOOK_ACCESS_TOKEN": page_access_token
+                    }
+                    keys_seen = set()
+                    
+                    for line in env_lines:
+                        # Ignorar el short token viejo para limpiar
+                        if line.startswith("FACEBOOK_SHORT_TOKEN") or line.startswith("FACEBOOK_APP_ID") or line.startswith("FACEBOOK_APP_SECRET"):
+                            continue
+                        
+                        matched = False
+                        for key in keys_to_update:
+                            if line.startswith(f"{key}="):
+                                new_lines.append(f"{key}={keys_to_update[key]}\n")
+                                keys_seen.add(key)
+                                matched = True
+                                break
+                        if not matched:
+                            new_lines.append(line)
+                            
+                    for key in keys_to_update:
+                        if key not in keys_seen:
+                            new_lines.append(f"{key}={keys_to_update[key]}\n")
+                            
+                    with open(env_path, "w", encoding="utf-8") as f:
+                        f.writelines(new_lines)
+                        
+                    # 4. Actualizar afiliados.json para Jorge
+                    afiliados = cargar_afiliados()
+                    admin_chat_id = os.getenv("TELEGRAM_CHAT_ID")
+                    if str(admin_chat_id) in afiliados:
+                        afiliados[str(admin_chat_id)]["facebook_page_id"] = page_id
+                        afiliados[str(admin_chat_id)]["facebook_access_token"] = page_access_token
+                        guardar_afiliados(afiliados)
+                        
+                    # Recargar variables de entorno locales
+                    os.environ["FACEBOOK_PAGE_ID"] = page_id
+                    os.environ["FACEBOOK_ACCESS_TOKEN"] = page_access_token
+                        
+                    # 5. Enviar mensaje de victoria en Telegram
+                    await notifications.enviar_alerta(
+                        f"⚡️ <b>CONFIGURACIÓN EXITOSA (API MÁSTER):</b>\n\n"
+                        f"He enlazado la API oficial de Facebook directamente con tu FanPage: <b>{page_name}</b> (ID: <code>{page_id}</code>).\n\n"
+                        f"👉 <i>A partir de ahora, todas tus publicaciones automáticas se harán en menos de 1 segundo sin necesidad de abrir Playwright. ¡Es 100% robusto y no expira jamás!</i> 🚀",
+                        chat_id=admin_chat_id
+                    )
+                    
+    except Exception as e:
+        print(f">> [Meta Auto-Exchanger] Excepción crítica: {e}")
+
 async def bucle_escucha_telegram():
     if not TELEGRAM_TOKEN:
         print(">> [Telegram Engine] Error crucial: Falta TELEGRAM_TOKEN en el .env")
         return
+        
+    try:
+        await auto_exchange_facebook_token()
+    except Exception as e_exch:
+        print(f"Error en auto_exchange_facebook_token: {e_exch}")
+
         
     print("==================================================")
     print("   INICIANDO MÓDULO INTERACTIVO DE TELEGRAM       ")
