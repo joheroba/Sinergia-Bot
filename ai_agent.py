@@ -304,6 +304,63 @@ def generar_invitacion_cafecito_ia(nombre_prospecto, distancia_metros, whatsapp_
         print(f"Error generando invitacion cafecito: {e}")
         return fallback_text
 
+def conversar_prospecto_ia(mensaje_nuevo, link_tienda=None, whatsapp=None):
+    """
+    Simula una conversación en lenguaje natural, actuando como un asesor experto de Gano iTouch.
+    """
+    import os
+    store_url = link_tienda if link_tienda else f"https://peru.ganoitouch.biz/{os.getenv('GANO_ITOUCH_STORE', 'joherobacafe')}"
+    whatsapp_phone = whatsapp if whatsapp else os.getenv("WHATSAPP_PHONE", "51947347666")
+    
+    system_context = (
+        "Eres el asistente de Inteligencia Artificial oficial de Jorge Rodríguez, Diamante de Gano iTouch.\n"
+        "Tu objetivo es conversar de forma extremadamente humana, cálida, empática y persuasiva con prospectos de WhatsApp.\n"
+        "Responde sus preguntas con base en los 4 Pilares de Gano iTouch:\n"
+        "1. ENERGIZA (Café 3en1, Classic, Chocolate saludable sin taquicardia).\n"
+        "2. REVITALIZA (Nutrición celular con Ganoderma Lucidum soluble, defensa inmune).\n"
+        "3. ARMONIZA (Anti-estrés, antioxidantes, paz mental).\n"
+        "4. SOCIALIZA (Network marketing profesional, duplicación de redes, libertad financiera).\n\n"
+        "RESTRICCIÓN CRÍTICA: No hagas promesas de curación médica ('no cura el cáncer, diabetes, etc.'). "
+        "Enfócate en bienestar general, nutrición celular profunda y antioxidantes.\n"
+        "Invita de forma muy natural a probar los productos en tu tienda virtual o a agendar una cita de negocios.\n"
+        f"🔗 Tienda Oficial: {store_url}\n"
+        f"📲 WhatsApp del Líder: +{whatsapp_phone}\n\n"
+        "Mantén tus respuestas relativamente cortas (máximo 2 párrafos de 3-4 líneas cada uno) para que se lean natural en WhatsApp, "
+        "usando negritas de forma elegante y emojis cordiales."
+    )
+    
+    prompt = (
+        f"{system_context}\n\n"
+        f"El prospecto dice: '{mensaje_nuevo}'\n\n"
+        "Escribe la respuesta directa para el chat de WhatsApp:"
+    )
+
+    fallback_text = (
+        "☕️ ¡Hola! Qué gusto saludarte. Soy el asistente de Jorge Rodríguez. "
+        "Disfruta hoy de los beneficios profundos del Ganoderma Lucidum soluble en mi portal oficial:\n"
+        f"👉 {store_url}\n\n"
+        "Si buscas afiliarte o conversar de negocios, cuéntame y coordinamos un Zoom. ¡Un abrazo!"
+    )
+
+    if check_local_llm():
+        resultado = query_local_llm(prompt)
+        if resultado:
+            return resultado
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return fallback_text
+
+    import google.generativeai as genai
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel('gemini-2.5-flash')
+    try:
+        response = model.generate_content(prompt, request_options={"timeout": 15.0})
+        return response.text.strip()
+    except Exception as e:
+        print(f"Error en conversación de WhatsApp: {e}")
+        return fallback_text
+
 if __name__ == "__main__":
     # Prueba rápida con codificación de consola segura
     import sys

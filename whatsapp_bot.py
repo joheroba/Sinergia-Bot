@@ -203,23 +203,9 @@ async def atender_prospectos():
                         
                         teclado_wa = page.locator('div[title="Escribe un mensaje"], div[contenteditable="true"][role="textbox"]').last
                         if await teclado_wa.is_visible():
-                            respuesta_inyeccion = ""
-                            if texto_limpio in ["1", "uno", "comprar", "productos"]:
-                                respuesta_inyeccion = MENSAJE_COMPRA
-                            elif texto_limpio in ["2", "dos", "afiliarse", "negocio"]:
-                                respuesta_inyeccion = MENSAJE_AFILIACION
-                            elif texto_limpio in ["3", "tres", "cita", "agendar"]:
-                                respuesta_inyeccion = MENSAJE_CITA
-                            elif texto_limpio in ["4", "cuatro", "salud"]:
-                                respuesta_inyeccion = MENSAJE_FAQ_PRODUCTO
-                            elif texto_limpio in ["5", "cinco", "duplicacion"]:
-                                respuesta_inyeccion = MENSAJE_FAQ_NEGOCIO
-                            else:
-                                if nombre_chat not in memoria_prospectos:
-                                    respuesta_inyeccion = MENSAJE_BIENVENIDA
-                                    memoria_prospectos[nombre_chat] = True
-                                else:
-                                    respuesta_inyeccion = MENSAJE_ERROR
+                            # Consultar al cerebro de IA para responder de forma 100% natural y fluida
+                            print(f"   => [IA Conversacional] Pensando respuesta para {nombre_chat}...")
+                            respuesta_inyeccion = ai_agent.conversar_prospecto_ia(texto_recibido, URL_TIENDA, os.getenv("WHATSAPP_PHONE"))
                             
                             # --- NUEVA LÓGICA CRM FASE A ---
                             print(f"   => [CRM] Procesando lead: {nombre_chat}")
