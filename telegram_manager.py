@@ -291,9 +291,7 @@ async def manejar_generar_post(chat_id, categoria, solo_texto=False):
     await notifications.enviar_mensaje_interactivo(mensaje_copy, markup, chat_id=chat_id)
 
 async def procesar_publicacion_inmediata(post_id, message_id, chat_id):
-    """Ejecuta Playwright de forma inmediata en la nube para publicar en Facebook (Solo Admin)."""
-    await notifications.enviar_alerta("🚀 <b>INICIANDO PUBLICACIÓN:</b> Abriendo Meta Business Suite en Nueva York. Mantente al tanto...", chat_id=chat_id)
-    
+    """Ejecuta la publicación inmediata vía API oficial de Meta (SaaS) o mediante navegador Playwright como fallback."""
     contenido = cargar_json()
     post = next((p for p in contenido if p["id"] == post_id), None)
     
@@ -304,20 +302,35 @@ async def procesar_publicacion_inmediata(post_id, message_id, chat_id):
     post["estado"] = "aprobado"
     guardar_json(contenido)
     
-    from playwright.async_api import async_playwright
+    afiliados = cargar_afiliados()
+    perfil = afiliados.get(str(chat_id), {})
+    page_id = perfil.get("facebook_page_id")
+    access_token = perfil.get("facebook_access_token")
     
+    if not (page_id and access_token):
+        if perfil.get("rol") == "admin" or str(chat_id) == os.getenv("TELEGRAM_CHAT_ID"):
+            page_id = os.getenv("FACEBOOK_PAGE_ID")
+            access_token = os.getenv("FACEBOOK_ACCESS_TOKEN")
+            
     exito = False
-    try:
-        async with async_playwright() as p:
-            context = await p.chromium.launch_persistent_context(
-                user_data_dir="./playwright_profile",
-                headless=False,
-                args=["--disable-blink-features=AutomationControlled", "--no-sandbox"]
-            )
-            exito = await publisher.publicar_en_meta(context, post)
-            await context.close()
-    except Exception as e:
-        print(f"Error al publicar por Telegram: {e}")
+    
+    if page_id and access_token:
+        await notifications.enviar_alerta("⚡ <b>PUBLICANDO POR API OFICIAL (META):</b> Conectando con los servidores de Facebook para publicar al instante sin abrir navegadores...", chat_id=chat_id)
+        exito = await publisher.publicar_en_facebook_api(page_id, access_token, post["texto"], post.get("ruta_imagen_local"))
+    else:
+        await notifications.enviar_alerta("🚀 <b>INICIANDO PUBLICACIÓN (NAVEGADOR):</b> Abriendo Meta Business Suite en servidor virtual. Mantente al tanto...", chat_id=chat_id)
+        from playwright.async_api import async_playwright
+        try:
+            async with async_playwright() as p:
+                context = await p.chromium.launch_persistent_context(
+                    user_data_dir="./playwright_profile",
+                    headless=False,
+                    args=["--disable-blink-features=AutomationControlled", "--no-sandbox"]
+                )
+                exito = await publisher.publicar_en_meta(context, post)
+                await context.close()
+        except Exception as e:
+            print(f"Error al publicar por Telegram (Navegador): {e}")
         
     if exito:
         post["fecha_publicacion"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
