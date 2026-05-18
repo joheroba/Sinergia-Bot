@@ -55,6 +55,40 @@ def dibujar_word_wrap(draw, texto_largo, fuente, x_caja, y_caja, ancho_caja, alt
         draw.text((x_alineado, y_text), linea, font=fuente, fill=(255, 255, 255))
         y_text += interlineado
 
+def redimensionar_con_fondo_borroso(imagen_base, ancho_salida=1080, alto_salida=1080):
+    """
+    Toma una imagen y la ajusta al tamaño cuadrado deseado preservando su aspecto.
+    Rellena los bordes vacíos con una copia súper borrosa y elegante de la misma imagen.
+    Garantiza que los rostros (como el CEO Mr. Leow Soon Seng) nunca sean cortados.
+    """
+    from PIL import ImageFilter
+    
+    # 1. Crear el lienzo de fondo con la imagen base muy estirada y borrosa
+    fondo = imagen_base.resize((ancho_salida, alto_salida), Image.Resampling.LANCZOS)
+    fondo = fondo.filter(ImageFilter.GaussianBlur(radius=30)) # Desenfoque premium de 30px
+    
+    # 2. Agregar una capa oscura translúcida sobre el fondo borroso para dar contraste de fondo
+    capa_oscura = Image.new('RGBA', (ancho_salida, alto_salida), (15, 10, 5, 120))
+    fondo.alpha_composite(capa_oscura)
+    
+    # 3. Ajustar la imagen real manteniendo la proporción exacta
+    img_w, img_h = imagen_base.size
+    ratio = min(ancho_salida / img_w, alto_salida / img_h)
+    nuevo_w = int(img_w * ratio)
+    nuevo_h = int(img_h * ratio)
+    
+    img_redimensionada = imagen_base.resize((nuevo_w, nuevo_h), Image.Resampling.LANCZOS)
+    
+    # 4. Pegar la imagen real en el centro del fondo borroso
+    pos_x = (ancho_salida - nuevo_w) // 2
+    pos_y = (alto_salida - nuevo_h) // 2
+    
+    if img_redimensionada.mode != 'RGBA':
+        img_redimensionada = img_redimensionada.convert('RGBA')
+        
+    fondo.paste(img_redimensionada, (pos_x, pos_y), img_redimensionada)
+    return fondo
+
 def crear_tarjeta_viral(texto, categoria, index):
     ancho, alto = 1080, 1080
     
@@ -104,8 +138,17 @@ def crear_tarjeta_viral(texto, categoria, index):
         print(f">> [Fábrica Visual] Seleccionada imagen premium: {img_ruta} ({os.path.getsize(img_ruta)//1024} KB)")
         
         fondo_base = Image.open(img_ruta).convert('RGBA')
-        # Crop Inteligente a cuadrado de Instagram 1:1 sin deformar
-        img = ImageOps.fit(fondo_base, (ancho, alto), method=Image.Resampling.LANCZOS)
+        
+        # Calcular aspecto ratio y verificar si contiene personas como Mr. Leow o infografías clave
+        base_w, base_h = fondo_base.size
+        aspect_ratio = base_w / base_h
+        
+        if aspect_ratio < 0.95 or aspect_ratio > 1.05 or any(k in foto_elegida.lower() for k in ["mr_leow", "plan_", "servilleta", "compensacion", "gold", "ceos", "soon_seng"]):
+            print(f">> [Fábrica Visual] Aplicando encuadre inteligente con fondo borroso para evitar cortes de rostros (ej: CEO o infografía).")
+            img = redimensionar_con_fondo_borroso(fondo_base, ancho, alto)
+        else:
+            # Crop Inteligente a cuadrado de Instagram 1:1 sin deformar
+            img = ImageOps.fit(fondo_base, (ancho, alto), method=Image.Resampling.LANCZOS)
     except Exception as e:
         print(f">> [Fábrica Visual] Alerta al cargar imagen: {e}. Usando fondo de respaldo.")
         try:
