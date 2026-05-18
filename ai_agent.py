@@ -194,6 +194,64 @@ def generar_copy_ia(id_publicacion, whatsapp_phone, custom_store_url=None):
         print(f"Error al generar copy con Gemini Cloud: {e}. Usando texto de respaldo...")
         return fallback_text
 
+def generar_copy_personalizado_ia(prompt_usuario, whatsapp_phone, custom_store_url=None):
+    """
+    Genera un texto persuasivo personalizado basado en un prompt del usuario,
+    respetando los lineamientos de la marca y agregando los enlaces oficiales de afiliado.
+    """
+    system_context = (
+        "Eres un experto en Marketing de Afiliados y copywriter profesional para Gano Excel / Gano iTouch.\n"
+        "El usuario te ha dado la siguiente instrucción específica para su publicación:\n"
+        f"Instrucción del usuario: '{prompt_usuario}'\n\n"
+        "RESTRICCIÓN ÉTICA ABSOLUTA: Evita promesas médicas curativas falsas o Claims como decir que cura el cáncer, diabetes, etc. Usa un lenguaje de bienestar lícito y antioxidantes.\n"
+        "Formato del post:\n"
+        "- Comienza con un hook impactante con emojis.\n"
+        "- Desarrolla la idea del usuario de forma persuasiva y estructurada.\n"
+        "- Termina con un llamado a la acción claro.\n"
+        "- Escribe con tono enérgico, inspirador y profesional.\n"
+    )
+    
+    if custom_store_url:
+        store_url = custom_store_url
+    else:
+        store_name = os.getenv("GANO_ITOUCH_STORE", "joherobacafe")
+        store_url = f"https://peru.ganoitouch.biz/{store_name}"
+        
+    prompt = (
+        f"{system_context}\n"
+        f"Por favor redacta la publicación basada en la instrucción del usuario.\n"
+        f"Asegúrate de incluir de forma natural el enlace a mi tienda oficial de afiliado al final:\n"
+        f"👉 {store_url}\n"
+        f"Y menciona que pueden escribirme al WhatsApp: +{whatsapp_phone} si tienen dudas.\n"
+        f"Responde únicamente con el texto completo del post finalizado, listo para copiar y pegar, sin notas ni explicaciones."
+    )
+    
+    fallback_text = (
+        f"¡Bienvenido al bienestar absoluto! ☕✨\n\n"
+        f"Basado en tu idea: '{prompt_usuario}'.\n\n"
+        f"👉 Adquiere tus infusiones favoritas de Ganoderma Lucidum en mi portal oficial de afiliado:\n"
+        f"🔗 {store_url}\n\n"
+        f"Consultas personalizadas al WhatsApp: +{whatsapp_phone}"
+    )
+
+    if check_local_llm():
+        resultado = query_local_llm(prompt)
+        if resultado:
+            return resultado
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return fallback_text
+
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel('gemini-2.5-flash')
+    try:
+        response = model.generate_content(prompt, request_options={"timeout": 15.0})
+        return response.text.strip()
+    except Exception as e:
+        print(f"Error generando copy personalizado: {e}")
+        return fallback_text
+
 if __name__ == "__main__":
     # Prueba rápida con codificación de consola segura
     import sys

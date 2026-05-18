@@ -448,10 +448,68 @@ async def manejar_mensaje_texto(chat_id, text, from_user):
     """Procesamiento de comandos normales o de flujos conversacionales (Multi-Usuario)."""
     text_strip = text.strip()
     user_state = USER_STATES.get(chat_id)
-    
     afiliados = cargar_afiliados()
     perfil = afiliados.get(str(chat_id))
     
+    if user_state and isinstance(user_state, dict) and user_state.get("state") == "ESPERANDO_PROMPT_CUSTOM":
+        ruta_imagen_temp = user_state.get("ruta_imagen")
+        prompt_usuario = text_strip
+        
+        USER_STATES[chat_id] = None
+        
+        await notifications.enviar_alerta("✍️ <b>Generando Copy persuasivo con IA y brandeando tu imagen...</b>\nEsto tomará solo unos segundos.", chat_id=chat_id)
+        
+        import branding_tool
+        LOGO_PATH = "logo_distribuidor.png"
+        ruta_branded = ruta_imagen_temp
+        if os.path.exists(LOGO_PATH) and os.path.exists(ruta_imagen_temp):
+            try:
+                ruta_branded = branding_tool.brandear_imagen(ruta_imagen_temp, LOGO_PATH)
+            except Exception as e_brand:
+                print(f"Error branding custom image: {e_brand}")
+                
+        user_phone = perfil.get("whatsapp", WHATSAPP_PHONE) if perfil else WHATSAPP_PHONE
+        user_store = perfil.get("link_tienda") if perfil else None
+        
+        if prompt_usuario.lower() == "/omitir":
+            prompt_usuario = "General, destaca la energía celular, los antioxidantes y la delicia de las bebidas de Ganoderma Lucidum."
+            
+        try:
+            texto_ia = ai_agent.generar_copy_personalizado_ia(prompt_usuario, user_phone, user_store)
+        except Exception as e_ia:
+            print(f"Error generating custom copy: {e_ia}")
+            texto_ia = (
+                f"☕️ ¡Sabor y bienestar garantizado en cada taza! 🌟\n\n"
+                f"Disfruta hoy de los beneficios profundos del Ganoderma Lucidum soluble en mi portal oficial:\n"
+                f"👉 {user_store if user_store else 'https://peru.ganoitouch.biz/joherobacafe'}\n\n"
+                f"Consultas al WhatsApp: +{user_phone}"
+            )
+            
+        contenido = cargar_json()
+        post_id = f"custom_post_{datetime.now().strftime('%m%d_%H%M%S')}"
+        nuevo_post = {
+            "id": post_id,
+            "texto": texto_ia,
+            "ruta_imagen_local": ruta_branded,
+            "categoria_imagen": "custom",
+            "fecha_creacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "fecha_programada": (datetime.now() + timedelta(minutes=2)).strftime("%Y-%m-%d %H:%M:%S"),
+            "estado": "aprobado",
+            "chat_id": chat_id
+        }
+        contenido.append(nuevo_post)
+        guardar_json(contenido)
+        
+        msg_victoria = (
+            f"🎉 <b>¡PUBLICACIÓN PERSONALIZADA CREADA Y AGENDADA!</b>\n\n"
+            f"✍️ <b>Texto redactado con IA:</b>\n"
+            f"<i>\"{texto_ia[:250]}...\"</i>\n\n"
+            f"📸 <b>Imagen brandeada con tu logotipo:</b>\n"
+            f"<code>{os.path.basename(ruta_branded)}</code>\n\n"
+            f"👉 <i>Esta publicación se enviará a tu FanPage automáticamente en 2 minutos. O puedes presionar <b>`✅ Publicar Ahora`</b> desde el menú interactivo para enviarla en este instante de forma supersónica.</i> 🚀"
+        )
+        await notifications.enviar_alerta(msg_victoria, chat_id=chat_id)
+        return
     # --- COMANDOS PÚBLICOS DE ONBOARDING ---
     if text_strip.startswith("/link"):
         parts = text_strip.split()
@@ -638,6 +696,55 @@ async def manejar_mensaje_texto(chat_id, text, from_user):
             chat_id=chat_id
         )
 
+async def descargar_foto_telegram(file_id, destino_local):
+    """Descarga una foto de los servidores de Telegram de forma asíncrona."""
+    url_file_info = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/getFile?file_id={file_id}"
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(url_file_info) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    file_path = data.get("result", {}).get("file_path")
+                    if file_path:
+                        url_download = f"https://api.telegram.org/file/bot{TELEGRAM_TOKEN}/{file_path}"
+                        async with session.get(url_download) as file_resp:
+                            if file_resp.status == 200:
+                                os.makedirs(os.path.dirname(destino_local), exist_ok=True)
+                                with open(destino_local, "wb") as f:
+                                    f.write(await file_resp.read())
+                                return True
+        except Exception as e:
+            print(f"Error descargando foto de Telegram: {e}")
+    return False
+
+async def manejar_foto_recibida(chat_id, photos):
+    """Procesa una foto subida por el usuario para branding y copy personalizado con IA."""
+    photo = photos[-1]
+    file_id = photo["file_id"]
+    
+    hoy = datetime.now().strftime("%Y%m%d%H%M%S")
+    destino = os.path.join("imagenes", "personalizadas", f"custom_{chat_id}_{hoy}.jpg")
+    
+    await notifications.enviar_alerta("📥 <b>Procesando tu imagen...</b>\nDescargando archivo en alta definición desde los servidores de Telegram...", chat_id=chat_id)
+    
+    exito = await descargar_foto_telegram(file_id, destino)
+    if exito:
+        USER_STATES[chat_id] = {
+            "state": "ESPERANDO_PROMPT_CUSTOM",
+            "ruta_imagen": destino
+        }
+        
+        mensaje = (
+            "📸 <b>¡FOTO RECIBIDA Y PROCESADA CON ÉXITO!</b>\n\n"
+            "Ya tengo tu foto guardada. Ahora, por favor dime:\n"
+            "👉 <b>¿Qué tema, beneficio o enfoque te gustaría que tenga el texto de esta publicación?</b>\n\n"
+            "<i>Escribe tu prompt o instrucción personalizada detallada (ej: 'Habla de los beneficios del café de Ganoderma para tener energía matutina').\n"
+            "O escribe /omitir para que la IA genere un copy general de forma automática.</i>"
+        )
+        await notifications.enviar_alerta(mensaje, chat_id=chat_id)
+    else:
+        await notifications.enviar_alerta("❌ <b>ERROR:</b> No se pudo descargar tu imagen. Por favor inténtalo de nuevo.", chat_id=chat_id)
+
 async def auto_exchange_facebook_token():
     app_id = os.getenv("FACEBOOK_APP_ID")
     app_secret = os.getenv("FACEBOOK_APP_SECRET")
@@ -788,12 +895,13 @@ async def bucle_escucha_telegram():
                                 await manejar_callback(update["callback_query"])
                             elif "message" in update:
                                 msg = update["message"]
-                                text = msg.get("text")
                                 chat = msg.get("chat", {})
                                 chat_id = str(chat.get("id"))
                                 
-                                if text:
-                                    await manejar_mensaje_texto(chat_id, text, msg.get("from", {}))
+                                if "photo" in msg:
+                                    await manejar_foto_recibida(chat_id, msg["photo"])
+                                elif "text" in msg:
+                                    await manejar_mensaje_texto(chat_id, msg["text"], msg.get("from", {}))
                                     
             except asyncio.CancelledError:
                 break
