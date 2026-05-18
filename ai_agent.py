@@ -252,6 +252,58 @@ def generar_copy_personalizado_ia(prompt_usuario, whatsapp_phone, custom_store_u
         print(f"Error generando copy personalizado: {e}")
         return fallback_text
 
+def generar_invitacion_cafecito_ia(nombre_prospecto, distancia_metros, whatsapp_phone, custom_store_url=None):
+    """
+    Genera un mensaje de invitación de café (One-to-One) súper casual, amigable y persuasivo,
+    adaptado por geolocalización.
+    """
+    system_context = (
+        "Eres un networker profesional y sumamente simpático de Gano iTouch.\n"
+        f"Tu objetivo es redactar un mensaje corto y casual de WhatsApp para invitar a '{nombre_prospecto}', "
+        f"quien se encuentra muy cerca (a unos {distancia_metros} metros) en este momento, a tomar un café clásico o 3en1 saludable "
+        "para compartir una oportunidad de negocio rápida de forma amigable, relajada y sin presión comercial agresiva.\n\n"
+        "RESTRICCIÓN ÉTICA: Tono conversacional, fresco, directo y muy natural de amigos que se cruzan en la calle."
+    )
+    
+    if custom_store_url:
+        store_url = custom_store_url
+    else:
+        store_name = os.getenv("GANO_ITOUCH_STORE", "joherobacafe")
+        store_url = f"https://peru.ganoitouch.biz/{store_name}"
+        
+    prompt = (
+        f"{system_context}\n"
+        f"Redacta un mensaje de no más de 3-4 líneas listo para enviar por WhatsApp.\n"
+        f"Incluye de forma muy casual y opcional que si quiere ver de qué trata de antemano, puede ver tu portal virtual:\n"
+        f"🔗 {store_url}\n"
+        f"Responde únicamente con el texto del mensaje listo para enviar, sin notas, ni comillas ni explicaciones."
+    )
+    
+    fallback_text = (
+        f"¡Hola {nombre_prospecto}! ¿Cómo estás? Qué gusto saludarte. ☕️\n\n"
+        f"Casualmente estoy muy cerca de ti, por esta zona. Tengo un ratito libre y me encantaría invitarte un café gourmet enriquecido con Ganoderma para conversar de un proyecto de negocio genial.\n\n"
+        f"Si quieres echarle un ojo antes, mira mi portal: {store_url} \n"
+        f"Avisame y nos encontramos en 10 minutos. ¡Un abrazo!"
+    )
+
+    if check_local_llm():
+        resultado = query_local_llm(prompt)
+        if resultado:
+            return resultado
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return fallback_text
+
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel('gemini-2.5-flash')
+    try:
+        response = model.generate_content(prompt, request_options={"timeout": 15.0})
+        return response.text.strip()
+    except Exception as e:
+        print(f"Error generando invitacion cafecito: {e}")
+        return fallback_text
+
 if __name__ == "__main__":
     # Prueba rápida con codificación de consola segura
     import sys
