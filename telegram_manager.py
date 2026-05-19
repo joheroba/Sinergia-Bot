@@ -781,8 +781,8 @@ async def auto_exchange_facebook_token():
                     return
                 long_token = res_data.get("access_token")
                 
-                # 2. Obtener lista de páginas
-                pages_url = f"https://graph.facebook.com/v20.0/me/accounts?access_token={long_token}"
+                # 2. Obtener lista de páginas (con limit=100 para evitar paginación truncada)
+                pages_url = f"https://graph.facebook.com/v20.0/me/accounts?limit=100&access_token={long_token}"
                 async with session.get(pages_url) as pages_response:
                     pages_data = await pages_response.json()
                     if pages_response.status != 200:
@@ -794,17 +794,28 @@ async def auto_exchange_facebook_token():
                         print(">> [Meta Auto-Exchanger] No se encontraron páginas asociadas a este token.")
                         return
                         
-                    # Buscar la página "Gano Excel"
+                    # Buscar la página de Gano Excel por ID o por nombre
                     target_page = None
-                    for page in pages_list:
-                        if "gano excel" in page.get("name", "").lower():
-                            target_page = page
-                            break
-                            
+                    env_page_id = os.getenv("FACEBOOK_PAGE_ID")
+                    
+                    # A. Intentar buscar por ID de página primero si está definido
+                    if env_page_id:
+                        for page in pages_list:
+                            if str(page.get("id")) == str(env_page_id):
+                                target_page = page
+                                break
+                                
+                    # B. Si no se encuentra por ID, intentar buscar por nombre que contenga "gano excel"
                     if not target_page:
-                        # Fallback a la primera página si no encuentra "Gano Excel"
+                        for page in pages_list:
+                            if "gano excel" in page.get("name", "").lower():
+                                target_page = page
+                                break
+                                
+                    if not target_page:
+                        # Fallback a la primera página si no encuentra la página objetivo
                         target_page = pages_list[0]
-                        print(f">> [Meta Auto-Exchanger] No se encontró 'Gano Excel'. Usando primera página disponible: {target_page.get('name')}")
+                        print(f">> [Meta Auto-Exchanger] No se encontró la página objetivo. Usando primera página disponible: {target_page.get('name')}")
                     
                     page_name = target_page.get("name")
                     page_id = target_page.get("id")
