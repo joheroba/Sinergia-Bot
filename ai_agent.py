@@ -39,6 +39,162 @@ def query_local_llm(prompt):
         print(f">> [IA Local] Error al consultar LM Studio: {e}")
     return None
 
+def analizar_composicion_ia(img_ruta):
+    """
+    Analiza de forma multimodal la composición de la imagen para determinar el espacio negativo libre,
+    los textos preexistentes, rostros o productos, y sugiere el mejor diseño, posición de texto
+    y opacidad para la tarjeta de Gano iTouch.
+    Utiliza un archivo de caché local (composicion_cache.json) para evitar consumir la cuota de la API
+    de Gemini en ejecuciones repetidas y acelerar el renderizado.
+    """
+    nombre_archivo = os.path.basename(img_ruta)
+    
+    # 1. Cargar caché si existe
+    ruta_cache = "composicion_cache.json"
+    cache = {}
+    if os.path.exists(ruta_cache):
+        try:
+            with open(ruta_cache, "r", encoding="utf-8") as f:
+                cache = json.load(f)
+        except Exception as e:
+            print(f">> [IA Visual] Error al leer caché: {e}")
+            
+    # Si ya está analizada esta imagen, retornar el resultado de inmediato
+    if nombre_archivo in cache:
+        print(f">> [IA Visual] [Cache OK] Recuperada composición guardada para {nombre_archivo}: {cache[nombre_archivo]}")
+        return cache[nombre_archivo]
+        
+    fallback = {
+        "region_libre": "bottom",
+        "dibujar_placa": True,
+        "color_texto": "white",
+        "placa_opacity": 160,
+        "estilo_sugerido": "DISENO_CRISTAL"
+    }
+    
+    # En caso de rate limit o falta de API_KEY, si hay un valor pre-mapeado estático para los assets oficiales conocidos:
+    mapeo_estatico = {
+        "producto_jabon.jpg": {
+            "region_libre": "center",
+            "dibujar_placa": true,
+            "color_texto": "white",
+            "placa_opacity": 95,
+            "estilo_sugerido": "DISENO_CRISTAL"
+        },
+        "producto_chocolate.jpg": {
+            "region_libre": "center",
+            "dibujar_placa": true,
+            "color_texto": "white",
+            "placa_opacity": 100,
+            "estilo_sugerido": "DISENO_CRISTAL"
+        },
+        "producto_3en1.jpg": {
+            "region_libre": "center",
+            "dibujar_placa": true,
+            "color_texto": "white",
+            "placa_opacity": 100,
+            "estilo_sugerido": "DISENO_CRISTAL"
+        },
+        "onetoone_es.jpg": {
+            "region_libre": "bottom",
+            "dibujar_placa": false,
+            "color_texto": "black",
+            "placa_opacity": 0,
+            "estilo_sugerido": "DISENO_MINIMALISTA"
+        },
+        "onetoone_en.jpg": {
+            "region_libre": "bottom",
+            "dibujar_placa": false,
+            "color_texto": "black",
+            "placa_opacity": 0,
+            "estilo_sugerido": "DISENO_MINIMALISTA"
+        },
+        "mr_leow3.jpg": {
+            "region_libre": "bottom",
+            "dibujar_placa": true,
+            "color_texto": "white",
+            "placa_opacity": 100,
+            "estilo_sugerido": "DISENO_CRISTAL"
+        }
+    }
+    
+    # Si la imagen coincide con una conocida y no tenemos quota, podemos usar el fallback inteligente pre-diseñado
+    if nombre_archivo in mapeo_estatico:
+        fallback = mapeo_estatico[nombre_archivo]
+        
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return fallback
+        
+    try:
+        from PIL import Image
+        import google.generativeai as genai
+        
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        
+        img = Image.open(img_ruta)
+        
+        # Optimización multimodal: Redimensionar imagen para reducir dramáticamente el peso de red y evitar timeouts 504.
+        img_temp = img.copy()
+        img_temp.thumbnail((300, 600), Image.Resampling.LANCZOS)
+        
+        prompt = (
+            "Analiza esta imagen publicitaria de Gano iTouch/Gano Excel. "
+            "Necesitamos superponer un texto nuevo en un recuadro o placa de forma ultra profesional. "
+            "Para evitar arruinar el diseño, tapar el producto físico principal, rostros de personas, "
+            "o textos preexistentes (como logos o nombres de producto ya impresos en la imagen), indícame: "
+            "1. ¿En qué región de la imagen hay 'espacio vacío o negativo' libre para colocar el texto sin tapar nada? "
+            "   Opciones: 'top' (arriba), 'bottom' (abajo), 'center' (centro), 'left' (izquierda), 'right' (derecha).\n"
+            "2. ¿Debemos dibujar una placa translúcida de fondo para que el texto sea legible? "
+            "   (Responde true si el fondo es muy detallado o colorido, o false si es un espacio liso/homogéneo donde se puede escribir directo sin caja).\n"
+            "3. ¿Qué color de texto contrastaría mejor? "
+            "   (Responde 'white', 'black', o un color hexadecimal elegante acorde a la paleta de la imagen).\n"
+            "4. ¿Cuál debería ser la opacidad de la placa translúcida? (de 0 a 255, p.ej. 160 para cristal oscuro, 80 para cristal muy suave, 0 para nada).\n"
+            "5. ¿Qué estilo sugiere? "
+            "   'DISENO_ROLEX' (filtro sutil en toda la imagen), 'DISENO_CRISTAL' (placa de cristal central), 'DISENO_MINIMALISTA' (texto limpio directo sobre espacio negativo sin cajas).\n\n"
+            "Responde estrictamente en formato JSON válido con las siguientes llaves: "
+            "\"region_libre\", \"dibujar_placa\", \"color_texto\", \"placa_opacity\", \"estilo_sugerido\". "
+            "No incluyas explicaciones ni formato markdown de código ```json."
+        )
+        
+        response = model.generate_content([prompt, img_temp], request_options={"timeout": 25.0})
+        texto_res = response.text.strip()
+        
+        # Limpiar posible markdown
+        if "```json" in texto_res:
+            texto_res = texto_res.split("```json")[1].split("```")[0].strip()
+        elif "```" in texto_res:
+            texto_res = texto_res.split("```")[1].split("```")[0].strip()
+            
+        data = json.loads(texto_res)
+        
+        # Validar y limpiar llaves
+        for key in fallback:
+            if key not in data:
+                data[key] = fallback[key]
+                
+        # Forzar tipos de datos correctos
+        if not isinstance(data["dibujar_placa"], bool):
+            data["dibujar_placa"] = data["dibujar_placa"] in [True, "true", "True"]
+        data["placa_opacity"] = int(data["placa_opacity"])
+        
+        # Guardar en caché
+        cache[nombre_archivo] = data
+        try:
+            with open(ruta_cache, "w", encoding="utf-8") as f:
+                json.dump(cache, f, indent=4, ensure_ascii=False)
+            print(f">> [IA Visual] [Caché Guardada] Composición registrada para {nombre_archivo}")
+        except Exception as ce:
+            print(f">> [IA Visual] Error al guardar caché: {ce}")
+            
+        print(f">> [IA Visual] Composición analizada con éxito para {nombre_archivo}: {data}")
+        return data
+        
+    except Exception as e:
+        print(f">> [IA Visual] Alerta en análisis multimodal: {e}. Usando composición de respaldo.")
+        return fallback
+
 def calificar_prospecto(mensaje):
     """
     Analiza el mensaje del cliente con IA para determinar su nivel de interés.

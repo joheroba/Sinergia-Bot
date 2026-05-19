@@ -26,7 +26,7 @@ HOOKS_NEGOCIO = [
     "Un emprendimiento sólido desde\ntu hogar. Descubre cómo ser socio directo."
 ]
 
-def dibujar_word_wrap(draw, texto_largo, fuente, x_caja, y_caja, ancho_caja, alto_caja):
+def dibujar_word_wrap(draw, texto_largo, fuente, x_caja, y_caja, ancho_caja, alto_caja, color_texto=(255, 255, 255)):
     """Calcula los saltos de línea matemáticamente para que nada se salga por el borde derecho/izquierdo."""
     # Modulador seguro de cantidad de letras (approx 34 letras para nuestro font size)
     caracteres_maximos = int(ancho_caja / 30) 
@@ -39,6 +39,11 @@ def dibujar_word_wrap(draw, texto_largo, fuente, x_caja, y_caja, ancho_caja, alt
     interlineado = 85
     y_text = y_caja + (alto_caja // 2) - (len(lineas) * interlineado // 2)
     
+    # Calcular sombra dinámica para contraste impecable: sombra blanca para texto oscuro, sombra negra para texto claro
+    r, g, b = color_texto[:3]
+    brillo = 0.299 * r + 0.587 * g + 0.114 * b
+    sombra_color = (255, 255, 255, 200) if brillo < 128 else (0, 0, 0, 200)
+    
     for linea in lineas:
         try:
             bbox = draw.textbbox((0, 0), linea, font=fuente)
@@ -49,10 +54,10 @@ def dibujar_word_wrap(draw, texto_largo, fuente, x_caja, y_caja, ancho_caja, alt
             
         x_alineado = x_caja + (ancho_caja - ancho_linea) / 2
         
-        # Efecto Parallax en las letras (Sombra Negra dura de contraste)
-        draw.text((x_alineado + 5, y_text + 5), linea, font=fuente, fill=(0, 0, 0, 200))
-        # Frontal Inmaculado White
-        draw.text((x_alineado, y_text), linea, font=fuente, fill=(255, 255, 255))
+        # Sombra Parallax inteligente
+        draw.text((x_alineado + 5, y_text + 5), linea, font=fuente, fill=sombra_color)
+        # Frontal
+        draw.text((x_alineado, y_text), linea, font=fuente, fill=color_texto)
         y_text += interlineado
 
 def redimensionar_con_fondo_borroso(imagen_base, ancho_salida=1080, alto_salida=1080):
@@ -184,35 +189,100 @@ def crear_tarjeta_viral(texto, categoria, index):
     if not fuente:
         fuente = fuente_logo = ImageFont.load_default()
 
-    # 2. ALTERNAR CEREBROS DE DISEÑO ENTRE MINIMALISTA MASCULINO Y GLASS CORPORATE
-    estilo = random.choice(["DISENO_ROLEX", "DISENO_CRISTAL"])
+    # 2. ANÁLISIS MULTIMODAL CON IA GEMINI DE COMPOSICIÓN Y ESPACIO NEGATIVO
+    if 'img_ruta' not in locals() or not os.path.exists(img_ruta):
+        info_ia = {
+            "region_libre": "bottom",
+            "dibujar_placa": True,
+            "color_texto": "white",
+            "placa_opacity": 160,
+            "estilo_sugerido": "DISENO_CRISTAL"
+        }
+    else:
+        try:
+            import ai_agent
+            info_ia = ai_agent.analizar_composicion_ia(img_ruta)
+        except Exception as ex:
+            print(f">> [IA Visual] Error al importar o llamar a ai_agent: {ex}")
+            info_ia = {
+                "region_libre": "bottom",
+                "dibujar_placa": True,
+                "color_texto": "white",
+                "placa_opacity": 160,
+                "estilo_sugerido": "DISENO_CRISTAL"
+            }
+            
+    region = info_ia.get("region_libre", "bottom")
+    dibujar_placa = info_ia.get("dibujar_placa", True)
+    color_texto_sug = info_ia.get("color_texto", "white")
+    placa_opacity = info_ia.get("placa_opacity", 160)
+    estilo = info_ia.get("estilo_sugerido", "DISENO_CRISTAL")
     
+    # Mapear colores de texto sugeridos
+    fill_color = (255, 255, 255)
+    if isinstance(color_texto_sug, str):
+        if color_texto_sug.lower() in ["white", "blanco", "claro"]:
+            fill_color = (255, 255, 255)
+        elif color_texto_sug.lower() in ["black", "negro", "oscuro"]:
+            fill_color = (15, 12, 10)
+        elif color_texto_sug.startswith("#"):
+            hex_val = color_texto_sug.lstrip('#')
+            try:
+                if len(hex_val) == 6:
+                    fill_color = tuple(int(hex_val[i:i+2], 16) for i in (0, 2, 4))
+                elif len(hex_val) == 3:
+                    fill_color = tuple(int(hex_val[i]*2, 16) for i in (0, 1, 2))
+            except Exception:
+                fill_color = (255, 255, 255)
+                
     # Crear una capa de overlay transparente de la misma dimensión para blending de canal alfa correcto
     overlay = Image.new('RGBA', img.size, (0, 0, 0, 0))
     draw_overlay = ImageDraw.Draw(overlay, 'RGBA')
     
+    # Calcular dimensiones y posiciones dinámicas según la región libre detectada por IA
+    caja_ancho = ancho - 140
+    caja_alto = 380
+    
+    # Soporte para varias regiones libres de la composición
+    if region == "top" or region == "top_half" or region == "arriba":
+        y_caja = 140
+    elif region == "bottom" or region == "bottom_half" or region == "abajo":
+        y_caja = alto - caja_alto - 120
+    else: # center / centro u otros
+        y_caja = (alto - caja_alto) // 2 - 20
+        
+    padding = 70
+    
     if estilo == "DISENO_ROLEX":
         # Filtro de contraste premium muy sutil para exaltar la tipografía sin oscurecer la foto
-        draw_overlay.rectangle([(0,0), (ancho, alto)], fill=(15, 12, 10, 95))
+        opacity_rolex = max(40, min(120, placa_opacity))
+        draw_overlay.rectangle([(0,0), (ancho, alto)], fill=(15, 12, 10, opacity_rolex))
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img, 'RGBA')
-        dibujar_word_wrap(draw, texto, fuente, 80, 0, ancho-160, alto - 100)
+        dibujar_word_wrap(draw, texto, fuente, 80, y_caja, ancho-160, caja_alto, color_texto=fill_color)
+    elif estilo == "DISENO_MINIMALISTA" or not dibujar_placa:
+        # Modo Minimalista: Sin placas de fondo. Texto dibujado directamente en espacio negativo
+        img = Image.alpha_composite(img, overlay)
+        draw = ImageDraw.Draw(img, 'RGBA')
+        dibujar_word_wrap(draw, texto, fuente, 80, y_caja + 20, ancho-160, caja_alto, color_texto=fill_color)
     else:
-        # Modo Cristal: Fondo iluminado y letras dentro del recuadro transparente en medio
-        padding = 70
-        caja_ancho = ancho - (padding * 2)
-        caja_alto = 450
-        y_caja = (alto - caja_alto) // 2 - 50
+        # Modo Cristal (Placa Glass translúcida en la región libre)
+        opac = max(60, min(190, placa_opacity))
+        # Elegir color de fondo de la placa acorde al color del texto para que no sea siempre negra!
+        r, g, b = fill_color[:3]
+        brillo = 0.299 * r + 0.587 * g + 0.114 * b
+        caja_fondo = (255, 255, 255, opac) if brillo < 128 else (15, 12, 10, opac)
+        caja_borde = (0, 0, 0, 180) if brillo < 128 else (255, 215, 0, 180)
         
-        # Placa Glass
         draw_overlay.rounded_rectangle(
             [(padding, y_caja), (ancho - padding, y_caja + caja_alto)],
-            radius=20, fill=(0, 0, 0, 160), outline=(255, 215, 0, 200), width=5
+            radius=20, fill=caja_fondo, outline=caja_borde, width=4
         )
-        draw_overlay.ellipse([(ancho//2 - 15, y_caja - 30), (ancho//2 + 15, y_caja)], fill=(255, 215, 0, 255))
+        badge_color = (15, 12, 10, 255) if brillo < 128 else (255, 215, 0, 255)
+        draw_overlay.ellipse([(ancho//2 - 12, y_caja - 24), (ancho//2 + 12, y_caja)], fill=badge_color)
         img = Image.alpha_composite(img, overlay)
         draw = ImageDraw.Draw(img, 'RGBA')
-        dibujar_word_wrap(draw, texto, fuente, padding + 20, y_caja, caja_ancho - 40, caja_alto)
+        dibujar_word_wrap(draw, texto, fuente, padding + 20, y_caja + 10, caja_ancho - 40, caja_alto - 20, color_texto=fill_color)
 
     # 3. FIRMA CORPORATIVA Y LOGO DEL DISTRIBUIDOR (Watermark Superior)
     
