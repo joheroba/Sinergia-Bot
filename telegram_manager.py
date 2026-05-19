@@ -310,7 +310,7 @@ async def procesar_publicacion_inmediata(post_id, message_id, chat_id):
     if not (page_id and access_token):
         if perfil.get("rol") == "admin" or str(chat_id) == os.getenv("TELEGRAM_CHAT_ID"):
             page_id = os.getenv("FACEBOOK_PAGE_ID")
-            access_token = os.getenv("FACEBOOK_ACCESS_TOKEN")
+            access_token = os.getenv("FACEBOOK_ACCESS_TOKEN") or os.getenv("FACEBOOK_SHORT_TOKEN")
             
     exito = False
     

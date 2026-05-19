@@ -298,7 +298,7 @@ async def main():
             posts_api.append((post, page_id, access_token))
         elif perfil.get("rol") == "admin" or str(chat_id) == os.getenv("TELEGRAM_CHAT_ID"):
             env_page_id = os.getenv("FACEBOOK_PAGE_ID")
-            env_access_token = os.getenv("FACEBOOK_ACCESS_TOKEN")
+            env_access_token = os.getenv("FACEBOOK_ACCESS_TOKEN") or os.getenv("FACEBOOK_SHORT_TOKEN")
             if env_page_id and env_access_token:
                 posts_api.append((post, env_page_id, env_access_token))
             else:
