@@ -3,28 +3,28 @@
         "region_libre": "center",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     },
     "producto_chocolate.jpg": {
         "region_libre": "center",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     },
     "producto_blackcoffee.jpg": {
         "region_libre": "center",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     },
     "producto_cereal.jpg": {
         "region_libre": "center",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     },
     "producto_jabon.jpg": {
@@ -38,126 +38,126 @@
         "region_libre": "center",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     },
     "producto_latterico.jpg": {
         "region_libre": "center",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     },
     "producto_mocharico.jpg": {
         "region_libre": "center",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     },
     "producto_p8b.jpg": {
         "region_libre": "center",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     },
     "producto_pastadental.jpg": {
         "region_libre": "center",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     },
     "producto_rico.jpg": {
         "region_libre": "center",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     },
     "producto_rooibos.jpg": {
         "region_libre": "center",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     },
     "producto_shokorico.jpg": {
         "region_libre": "center",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     },
     "onetoone_en.jpg": {
         "region_libre": "bottom",
-        "dibujar_placa": false,
+        "dibujar_placa": true,
         "color_texto": "black",
-        "placa_opacity": 0,
-        "estilo_sugerido": "DISENO_MINIMALISTA"
+        "placa_opacity": 95,
+        "estilo_sugerido": "DISENO_CRISTAL"
     },
     "onetoone_es.jpg": {
         "region_libre": "bottom",
-        "dibujar_placa": false,
+        "dibujar_placa": true,
         "color_texto": "black",
-        "placa_opacity": 0,
-        "estilo_sugerido": "DISENO_MINIMALISTA"
+        "placa_opacity": 95,
+        "estilo_sugerido": "DISENO_CRISTAL"
     },
     "onetoone_qu.jpg": {
         "region_libre": "bottom",
-        "dibujar_placa": false,
+        "dibujar_placa": true,
         "color_texto": "black",
-        "placa_opacity": 0,
-        "estilo_sugerido": "DISENO_MINIMALISTA"
+        "placa_opacity": 95,
+        "estilo_sugerido": "DISENO_CRISTAL"
     },
     "plan_compensacion_infografia.png": {
         "region_libre": "bottom",
-        "dibujar_placa": false,
+        "dibujar_placa": true,
         "color_texto": "black",
-        "placa_opacity": 0,
-        "estilo_sugerido": "DISENO_MINIMALISTA"
+        "placa_opacity": 95,
+        "estilo_sugerido": "DISENO_CRISTAL"
     },
     "plan_servilleta_infografia.png": {
         "region_libre": "bottom",
-        "dibujar_placa": false,
+        "dibujar_placa": true,
         "color_texto": "black",
-        "placa_opacity": 0,
-        "estilo_sugerido": "DISENO_MINIMALISTA"
+        "placa_opacity": 95,
+        "estilo_sugerido": "DISENO_CRISTAL"
     },
     "gano_business_gold.png": {
         "region_libre": "bottom",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     },
     "mr_leow1.jpg": {
         "region_libre": "bottom",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     },
     "mr_leow2.jpg": {
         "region_libre": "bottom",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     },
     "mr_leow3.jpg": {
         "region_libre": "bottom",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     },
     "banner_pioir.jpg": {
         "region_libre": "bottom",
         "dibujar_placa": true,
         "color_texto": "white",
-        "placa_opacity": 100,
+        "placa_opacity": 95,
         "estilo_sugerido": "DISENO_CRISTAL"
     }
 }

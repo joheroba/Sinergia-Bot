@@ -142,6 +142,22 @@ def crear_tarjeta_viral(texto, categoria, index):
         img_ruta = os.path.join(carpeta_assets, foto_elegida)
         print(f">> [Fábrica Visual] Seleccionada imagen premium: {img_ruta} ({os.path.getsize(img_ruta)//1024} KB)")
         
+        # Si la imagen seleccionada es una herramienta de plan servilleta o afiliación uno a uno,
+        # adaptamos el texto para resaltar las ventajas del negocio multinivel mostradas en la lámina.
+        if any(k in foto_elegida.lower() for k in ["onetoone", "plan_", "servilleta", "compensacion"]):
+            if "es" in foto_elegida.lower() or "servilleta" in foto_elegida.lower() or "compensacion" in foto_elegida.lower():
+                texto = (
+                    "Plan Servilleta Gano iTouch:\n"
+                    "Duplicación simple, 12 formas de ganar y "
+                    "bonos de inicio rápido que aceleran tu crecimiento."
+                )
+            else:
+                texto = (
+                    "Gano iTouch 1-to-1 Presentation:\n"
+                    "Simple duplication, 12 ways to earn, and "
+                    "fast start bonuses designed to scale your business."
+                )
+        
         fondo_base = Image.open(img_ruta).convert('RGBA')
         
         # Calcular aspecto ratio y verificar si contiene personas como Mr. Leow o infografías clave
@@ -213,10 +229,12 @@ def crear_tarjeta_viral(texto, categoria, index):
             }
             
     region = info_ia.get("region_libre", "bottom")
-    dibujar_placa = info_ia.get("dibujar_placa", True)
     color_texto_sug = info_ia.get("color_texto", "white")
-    placa_opacity = info_ia.get("placa_opacity", 160)
-    estilo = info_ia.get("estilo_sugerido", "DISENO_CRISTAL")
+    
+    # DIRECTIVA DEL USUARIO: En lo sucesivo, los textos tendrán SIEMPRE un fondo con opacidad sutil de 95, cualquiera sea el color.
+    dibujar_placa = True
+    placa_opacity = 95
+    estilo = "DISENO_CRISTAL"
     
     # Mapear colores de texto sugeridos
     fill_color = (255, 255, 255)
