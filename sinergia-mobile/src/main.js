@@ -240,6 +240,29 @@ document.querySelector('#app').innerHTML = `
       </button>
     </div>
   </div>
+  <!-- Prospectar Modal (Hidden by default) -->
+  <div id="modal-prospectar" class="screen" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto;">
+    <div class="glass-card" style="margin: 2rem 1rem; position: relative;">
+      <i data-lucide="x" id="btn-close-prospectar" style="position: absolute; right: 1rem; top: 1rem; cursor: pointer; color: var(--text-muted);"></i>
+      <h3 style="color: var(--gold-light); margin-bottom: 1rem;">Cruzar Datos y Prospectar</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Ingresa tus credenciales de Gano iTouch para cruzar tu red con tu agenda telefónica y encontrar inactivos.</p>
+      
+      <div class="input-group">
+        <label>Usuario (Backoffice)</label>
+        <input type="text" id="prospectar-user" class="input-field" placeholder="1234567" />
+      </div>
+      <div class="input-group" style="margin-top: 1rem;">
+        <label>Contraseña</label>
+        <input type="password" id="prospectar-pass" class="input-field" placeholder="********" />
+      </div>
+      
+      <button id="btn-iniciar-cruce" class="btn-primary" style="margin-top: 1.5rem; background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-primary) 100%);">
+        <i data-lucide="users"></i>
+        <span class="btn-text">Iniciar Cruce de IA</span>
+        <div class="loader"></div>
+      </button>
+    </div>
+  </div>
 
   <!-- Toast Notification -->
   <div id="toast" class="toast">
