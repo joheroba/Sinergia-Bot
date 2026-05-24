@@ -331,27 +331,52 @@ document.getElementById('btn-iniciar-cruce').addEventListener('click', async () 
   }
 
   try {
-    const res = await fetch('http://45.55.92.211:3005/api/cruzar_prospectos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username,
-        password,
-        phone_contacts: phoneContacts
-      })
-    });
+    const CHUNK_SIZE = 500;
+    const totalContacts = phoneContacts.length;
+    const totalChunks = Math.max(1, Math.ceil(totalContacts / CHUNK_SIZE));
+    
+    let finalReport = '';
+    
+    for (let i = 0; i < totalChunks; i++) {
+      if (totalChunks > 1) {
+        btn.innerHTML = `<i data-lucide="loader-2" class="spin"></i> Cruzando Lote ${i + 1}/${totalChunks}...`;
+        lucide.createIcons();
+      }
+      
+      const chunk = phoneContacts.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+      const isFinalChunk = (i === totalChunks - 1);
+      
+      const res = await fetch('http://45.55.92.211:3005/api/cruzar_prospectos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          password,
+          phone_contacts: chunk,
+          is_final_chunk: isFinalChunk,
+          chunk_index: i + 1,
+          total_contacts: totalContacts
+        })
+      });
 
-    const data = await res.json();
-    resultDiv.style.display = 'block';
-    if (data.status === 'success') {
-      resultDiv.innerHTML = data.report.replace(/\\n/g, '<br>');
-      showToast('Cruce exitoso!');
-    } else {
-      resultDiv.innerHTML = 'Error: ' + data.message;
+      const data = await res.json();
+      
+      if (data.status === 'success') {
+        finalReport = data.report.replace(/\n/g, '<br>');
+      } else if (data.status === 'partial') {
+        console.log(data.message);
+      } else {
+        throw new Error(data.message || 'Error desconocido del servidor');
+      }
     }
+    
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = finalReport;
+    showToast('Cruce exitoso!');
+    
   } catch (error) {
     resultDiv.style.display = 'block';
-    resultDiv.innerHTML = 'Error de red al conectar con el servidor.';
+    resultDiv.innerHTML = 'Error al cruzar datos: ' + (error.message || 'Fallo de conexión');
   } finally {
     btn.innerHTML = '<i data-lucide="refresh-cw"></i> Iniciar Escaneo y Cruce';
     btn.disabled = false;
