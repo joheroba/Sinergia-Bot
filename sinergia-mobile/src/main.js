@@ -1,4 +1,5 @@
 import './style.css'
+import { Contacts } from '@capacitor-community/contacts';
 
 document.querySelector('#app').innerHTML = `
   <!-- Background Glows -->
@@ -102,6 +103,14 @@ document.querySelector('#app').innerHTML = `
         <i data-lucide="bar-chart-2" style="color: #10b981;"></i>
         <span>Analítica & Metas</span>
       </div>
+      <div class="feature-btn" id="btn-cobros" style="background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.3);">
+        <i data-lucide="wallet" style="color: var(--gold-primary);"></i>
+        <span>Mis Cobros & QRs</span>
+      </div>
+      <div class="feature-btn" id="btn-prospectar" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);">
+        <i data-lucide="users" style="color: #3b82f6;"></i>
+        <span>Cruzar Datos y Prospectar</span>
+      </div>
     </div>
   </div>
 
@@ -191,6 +200,47 @@ document.querySelector('#app').innerHTML = `
     </div>
   </div>
 
+  <!-- Cobros & QRs Modal (Hidden by default) -->
+  <div id="modal-cobros" class="screen" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto;">
+    <div class="glass-card" style="margin: 2rem 1rem; position: relative;">
+      <i data-lucide="x" id="btn-close-cobros" style="position: absolute; right: 1rem; top: 1rem; cursor: pointer; color: var(--text-muted);"></i>
+      <h3 style="color: var(--gold-light); margin-bottom: 1rem;">Mis Cobros y QRs</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Sube tus códigos QR y cuentas bancarias para que el Bot cierre ventas a tu nombre.</p>
+      
+      <div class="input-group">
+        <label>Cuenta BCP Soles</label>
+        <input type="text" id="cobro-bcp" class="input-field" placeholder="193-00000000-0-00" />
+      </div>
+      <div class="input-group" style="margin-top: 1rem;">
+        <label>Cuenta Interbank Soles</label>
+        <input type="text" id="cobro-interbank" class="input-field" placeholder="200-3000000000" />
+      </div>
+      <div class="input-group" style="margin-top: 1rem;">
+        <label>Tipo de Cambio Referencial (S/.)</label>
+        <input type="number" step="0.01" id="cobro-tc" class="input-field" placeholder="3.85" value="3.85" />
+      </div>
+      
+      <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+        <div style="flex: 1; text-align: center;">
+          <p style="color: #6C22A6; font-size: 0.9rem; margin-bottom: 0.5rem; font-weight: bold;">Yape QR</p>
+          <img id="preview-yape" src="https://via.placeholder.com/150?text=Sube+Yape" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px dashed #6C22A6; cursor: pointer;" />
+          <input type="file" id="file-yape" accept="image/*" style="display: none;" />
+        </div>
+        <div style="flex: 1; text-align: center;">
+          <p style="color: #00D3FF; font-size: 0.9rem; margin-bottom: 0.5rem; font-weight: bold;">Plin QR</p>
+          <img id="preview-plin" src="https://via.placeholder.com/150?text=Sube+Plin" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px dashed #00D3FF; cursor: pointer;" />
+          <input type="file" id="file-plin" accept="image/*" style="display: none;" />
+        </div>
+      </div>
+
+      <button id="btn-save-cobros" class="btn-primary" style="margin-top: 1.5rem; background: linear-gradient(135deg, var(--gold-dark) 0%, var(--gold-primary) 100%);">
+        <i data-lucide="save"></i>
+        <span class="btn-text">Guardar Billetera</span>
+        <div class="loader"></div>
+      </button>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toast" class="toast">
     <i data-lucide="check-circle"></i>
@@ -212,6 +262,78 @@ const toast = document.getElementById('toast');
 const toastMsg = document.getElementById('toast-msg');
 
 // Toggle forms
+document.getElementById('btn-close-cobros').addEventListener('click', () => {
+  document.getElementById('modal-cobros').style.display = 'none';
+});
+
+// Prospectar Modal Logic
+document.getElementById('btn-prospectar').addEventListener('click', () => {
+  document.getElementById('modal-prospectar').style.display = 'block';
+});
+
+document.getElementById('btn-close-prospectar').addEventListener('click', () => {
+  document.getElementById('modal-prospectar').style.display = 'none';
+});
+
+document.getElementById('btn-iniciar-cruce').addEventListener('click', async () => {
+  const username = document.getElementById('prospect-codigo').value;
+  const password = document.getElementById('prospect-password').value;
+  const resultDiv = document.getElementById('prospect-result');
+  const btn = document.getElementById('btn-iniciar-cruce');
+
+  if (!username || !password) {
+    showToast('Ingresa tu código y contraseña');
+    return;
+  }
+
+  btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i> Cruzando Datos...';
+  btn.disabled = true;
+  resultDiv.style.display = 'none';
+
+  let phoneContacts = [];
+  try {
+    const permission = await Contacts.requestPermissions();
+    if (permission.contacts === 'granted') {
+      const result = await Contacts.getContacts({
+        projection: { name: true, phones: true }
+      });
+      phoneContacts = result.contacts;
+    } else {
+      showToast('Permiso de contactos denegado. Se usará modo solo-Backoffice.');
+    }
+  } catch (err) {
+    console.log('Contacts API no disponible (probablemente en Web). Se omitirá agenda local.', err);
+  }
+
+  try {
+    const res = await fetch('http://45.55.92.211:3005/api/cruzar_prospectos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username,
+        password,
+        phone_contacts: phoneContacts
+      })
+    });
+
+    const data = await res.json();
+    resultDiv.style.display = 'block';
+    if (data.status === 'success') {
+      resultDiv.innerHTML = data.report.replace(/\\n/g, '<br>');
+      showToast('Cruce exitoso!');
+    } else {
+      resultDiv.innerHTML = 'Error: ' + data.message;
+    }
+  } catch (error) {
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = 'Error de red al conectar con el servidor.';
+  } finally {
+    btn.innerHTML = '<i data-lucide="refresh-cw"></i> Iniciar Escaneo y Cruce';
+    btn.disabled = false;
+    lucide.createIcons();
+  }
+});
+
 document.getElementById('toggle-register').addEventListener('click', () => {
   document.getElementById('login-form').style.display = 'none';
   document.getElementById('register-form').style.display = 'block';
@@ -241,6 +363,45 @@ document.getElementById('btn-analitica').addEventListener('click', () => {
 });
 document.getElementById('btn-close-analitica').addEventListener('click', () => {
   modalAnalitica.style.display = 'none';
+});
+
+// Cobros Modal
+const modalCobros = document.getElementById('modal-cobros');
+document.getElementById('btn-cobros').addEventListener('click', () => {
+  modalCobros.style.display = 'block';
+});
+document.getElementById('btn-close-cobros').addEventListener('click', () => {
+  modalCobros.style.display = 'none';
+});
+
+// QRs Upload Logic
+let b64Yape = null;
+let b64Plin = null;
+
+document.getElementById('preview-yape').addEventListener('click', () => document.getElementById('file-yape').click());
+document.getElementById('file-yape').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(file) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      b64Yape = ev.target.result;
+      document.getElementById('preview-yape').src = b64Yape;
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+document.getElementById('preview-plin').addEventListener('click', () => document.getElementById('file-plin').click());
+document.getElementById('file-plin').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(file) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      b64Plin = ev.target.result;
+      document.getElementById('preview-plin').src = b64Plin;
+    };
+    reader.readAsDataURL(file);
+  }
 });
 
 let kpiBase64 = null;
@@ -345,7 +506,7 @@ function setLoading(btn, isLoading) {
   }
 }
 
-const API_BASE = 'http://localhost:3005/api'; // Cambiar por IP del servidor al pasar a prod
+const API_BASE = 'http://45.55.92.211:3005/api';
 
 // API Logic
 function setupDashboard(user, token) {
@@ -465,6 +626,40 @@ document.getElementById('btn-save-settings').addEventListener('click', async () 
   } catch(e) {
     setLoading(document.getElementById('btn-save-settings'), false);
     showToast('Error al guardar ajustes', true);
+  }
+});
+
+document.getElementById('btn-save-cobros').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-save-cobros');
+  setLoading(btn, true);
+  
+  const payload = {
+    token: window.currentUserToken,
+    cta_bcp: document.getElementById('cobro-bcp').value,
+    cta_interbank: document.getElementById('cobro-interbank').value,
+    tipo_cambio: document.getElementById('cobro-tc').value,
+    qr_yape: b64Yape,
+    qr_plin: b64Plin
+  };
+  
+  try {
+    const res = await fetch(`${API_BASE}/config_cobros`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    setLoading(btn, false);
+    
+    if (data.success) {
+      showToast('Billetera guardada correctamente');
+      modalCobros.style.display = 'none';
+    } else {
+      showToast(data.message, true);
+    }
+  } catch(e) {
+    setLoading(btn, false);
+    showToast('Error al guardar billetera', true);
   }
 });
 

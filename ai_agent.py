@@ -537,7 +537,7 @@ def conversar_prospecto_ia(mensaje_nuevo, link_tienda=None, whatsapp=None, idiom
     genai.configure(api_key=api_key)
     
     # Usar el modelo Flash que soporta Audio, Imágenes y Texto rápidamente
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.5-flash')
     
     try:
         contents = [prompt]
@@ -580,6 +580,59 @@ async def extraer_kpi_automatico(username, password):
         finally:
             await browser.close()
 
+async def extraer_arbol_binario(username, password):
+    """Navega a DownlineV2.aspx y extrae los inactivos."""
+    from playwright.async_api import async_playwright
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+        try:
+            await page.goto("https://peru.ganoitouch.biz/Login", timeout=60000)
+            user_input = page.locator('input[type="text"], input[name*="user"], input[name*="login"]').first
+            pass_input = page.locator('input[type="password"]').first
+            await user_input.wait_for(timeout=15000)
+            await user_input.fill(username)
+            await pass_input.fill(password)
+            await pass_input.press("Enter")
+            await page.wait_for_timeout(5000)
+            
+            await page.goto("https://peru.ganoitouch.biz/DownlineV2.aspx", timeout=60000)
+            await page.wait_for_timeout(10000)
+            
+            # Extract basic text from the tree to send to Gemini for parsing
+            texto_arbol = await page.inner_text("body")
+            return texto_arbol[:3000] # Pass text to AI for parsing names
+        except Exception as e:
+            return f"Error extrayendo árbol: {e}"
+        finally:
+            await browser.close()
+
+async def cruzar_y_generar_estrategia(texto_backoffice, phone_contacts):
+    try:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key: return "❌ GEMINI_API_KEY no configurada."
+
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        
+        prompt = (
+            "Eres un experto en Network Marketing y Data Mining.\\n"
+            "Tengo dos conjuntos de datos:\\n"
+            f"1. TEXTO DEL BACKOFFICE (Árbol Binario):\\n{texto_backoffice}\\n\\n"
+            f"2. AGENDA DE CONTACTOS DEL CELULAR (Nombres y Teléfonos):\\n{phone_contacts}\\n\\n"
+            "TUS TAREAS:\\n"
+            "1. Extrae los nombres de los distribuidores que aparecen en el texto del Backoffice.\\n"
+            "2. Cruza esos nombres (usando coincidencia parcial) con la agenda de contactos del celular.\\n"
+            "3. Si encuentras un 'MATCH' (Coincidencia), dame el nombre, el teléfono y redacta un mensaje corto y persuasivo de reactivación para enviarle por WhatsApp, usando urgencia (puntos acumulados).\\n"
+            "4. Si hay contactos en la agenda que NO están en el backoffice, escoge 3 al azar y redacta mensajes de prospección en frío invitándolos al negocio.\\n"
+            "Devuelve un reporte claro y bien formateado."
+        )
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"Error en IA: {e}"
+
 def analizar_texto_estrategia(texto_backoffice):
     """Analiza el texto plano del Backoffice (sin imagen) para dar una estrategia."""
     try:
@@ -587,7 +640,8 @@ def analizar_texto_estrategia(texto_backoffice):
         if not api_key: return "❌ GEMINI_API_KEY no configurada."
 
         import google.generativeai as genai
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.5-flash')
         
         prompt = (
             "Eres el Director Estratégico de un afiliado de Gano Excel / Gano iTouch.\\n"
@@ -615,9 +669,10 @@ def analizar_kpi_y_estrategia(imagen_bytes):
             return "❌ Error: GEMINI_API_KEY no configurada."
 
         import google.generativeai as genai
+        genai.configure(api_key=api_key)
         
         # Configurar modelo con capacidades de visión
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash')
         
         prompt = (
             "Eres un experto en Redes de Mercadeo y el Director Estratégico de un afiliado de Gano Excel / Gano iTouch.\\n"
