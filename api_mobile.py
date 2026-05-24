@@ -219,7 +219,6 @@ async def reclutar_por_mi(request):
 
 import base64
 import ai_agent
-from test_scraper import run_test_and_get_text # Asumimos que refactorizamos test_scraper.py
 
 @routes.post('/api/analyze_kpi')
 async def analyze_kpi(request):
