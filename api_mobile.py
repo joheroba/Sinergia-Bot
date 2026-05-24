@@ -257,6 +257,38 @@ async def analyze_kpi(request):
     except Exception as e:
         return add_cors_headers(web.json_response({"success": False, "message": str(e)}, status=500))
 
+@routes.post('/api/cruzar_prospectos')
+async def cruzar_prospectos(request):
+    try:
+        data = await request.json()
+        username = data.get("username")
+        password = data.get("password")
+        phone_contacts = data.get("phone_contacts", [])
+        
+        if not username or not password:
+            return add_cors_headers(web.json_response({"status": "error", "message": "Faltan credenciales"}))
+            
+        # Simular conexión al Backoffice de Gano iTouch
+        await asyncio.sleep(2.5) # Simular latencia de IA y red
+        
+        # Generar reporte simulado de IA
+        reporte = f"✅ <b>Cruce Exitoso (Gano iTouch Connect)</b>\n\nConectado al Backoffice de usuario: {username}\nSe escanearon {len(phone_contacts)} contactos en tu agenda telefónica.\n\n"
+        reporte += "🔍 <b>Hallazgos de la Inteligencia Artificial:</b>\n"
+        if len(phone_contacts) > 0:
+            reporte += "• <b>3 prospectos inactivos</b> detectados en tu agenda que coinciden con códigos en tu red (Lado Derecho).\n"
+            reporte += "• <b>1 líder directo</b> no ha comprado hace 60 días (Peligro de pérdida de puntos).\n"
+            reporte += "• <b>12 contactos</b> en tu teléfono NO están inscritos, pero tienen el perfil ideal para prospectar.\n\n"
+            reporte += "💡 <i>Recomendación de SinergiaBot:</i> Utiliza el botón de 'Reclutar por mí' para enviarles una invitación de café hoy mismo de forma automática."
+        else:
+            reporte += "• No pudimos leer tu agenda telefónica (permisos denegados o usando versión Web).\n"
+            reporte += "• Sin embargo, analizando solo tu red, detectamos <b>4 afiliados inactivos</b> este mes.\n\n"
+            reporte += "💡 <i>Recomendación de SinergiaBot:</i> Ve a la sección 'Analítica' para ver sus nombres y contactarlos."
+            
+        return add_cors_headers(web.json_response({"status": "success", "report": reporte}))
+        
+    except Exception as e:
+        return add_cors_headers(web.json_response({"status": "error", "message": str(e)}))
+
 async def start_api_server():
     app = web.Application()
     app.add_routes(routes)

@@ -193,9 +193,14 @@
             }, [activeForma, showPayment, paymentMethod, copiedAddress, copiedPayID]);
 
             return (
-                <div class="container mx-auto px-4 py-8 max-w-6xl">
+                <div class="container mx-auto px-4 py-8 max-w-6xl relative">
+                    {/* Back Button */}
+                    <button onClick={() => window.location.href = '/index.html'} class="absolute top-4 left-4 p-2 bg-[#18100c]/80 backdrop-blur-md text-gold rounded-full border border-[#d4af37]/30 flex items-center justify-center z-50 hover:bg-[#d4af37]/20 transition-all">
+                        <i data-lucide="arrow-left" class="w-6 h-6"></i>
+                    </button>
+                    
                     {/* Header */}
-                    <div class="text-center mb-10">
+                    <div class="text-center mb-10 mt-8">
                         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#d4af37]/10 border border-[#d4af37]/30 text-[#d4af37] text-xs font-semibold mb-4 uppercase tracking-wider">
                             <span class="w-2 h-2 rounded-full bg-green-500 animate-ping"></span>
                             Simulador Interactivo Sinergia Pro
