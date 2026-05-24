@@ -261,6 +261,8 @@ document.querySelector('#app').innerHTML = `
         <span class="btn-text">Iniciar Cruce de IA</span>
         <div class="loader"></div>
       </button>
+      
+      <div id="prospect-result" style="display:none; margin-top: 1rem; padding: 1rem; background: rgba(0,0,0,0.5); border-radius: 8px; color: var(--gold-light); font-size: 0.9rem; white-space: pre-wrap;"></div>
     </div>
   </div>
 
@@ -299,8 +301,8 @@ document.getElementById('btn-close-prospectar').addEventListener('click', () => 
 });
 
 document.getElementById('btn-iniciar-cruce').addEventListener('click', async () => {
-  const username = document.getElementById('prospect-codigo').value;
-  const password = document.getElementById('prospect-password').value;
+  const username = document.getElementById('prospectar-user').value;
+  const password = document.getElementById('prospectar-pass').value;
   const resultDiv = document.getElementById('prospect-result');
   const btn = document.getElementById('btn-iniciar-cruce');
 
