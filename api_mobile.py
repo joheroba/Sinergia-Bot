@@ -290,7 +290,7 @@ async def cruzar_prospectos(request):
         return add_cors_headers(web.json_response({"status": "error", "message": str(e)}))
 
 async def start_api_server():
-    app = web.Application()
+    app = web.Application(client_max_size=1024**2 * 50) # 50 MB to allow large phone contact lists
     app.add_routes(routes)
     runner = web.AppRunner(app)
     await runner.setup()
