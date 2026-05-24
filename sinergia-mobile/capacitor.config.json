@@ -1,5 +1,8 @@
 {
   "appId": "com.ganoitouch.sinergiamobile",
   "appName": "Sinergia Mobile",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "cleartext": true
+  }
 }
