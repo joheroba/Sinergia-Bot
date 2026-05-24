@@ -3,13 +3,19 @@ echo "====================================================="
 echo "      REINICIO NINJA (SIN GIT RESET)                 "
 echo "====================================================="
 echo ""
-echo ">> 1. Deteniendo procesos antiguos de Telegram..."
+echo ">> 1. Deteniendo procesos antiguos..."
 pkill -f telegram_manager.py
-sleep 1
+pkill -f api_mobile.py
+pkill -f whatsapp_bot.py
+sleep 2
 
 echo ""
-echo ">> 2. Iniciando Sinergia Bot Multi-Afiliado en segundo plano..."
-nohup python3 -u telegram_manager.py > telegram.log 2>&1 &
+echo ">> 2. Iniciando Servidor API y Telegram..."
+nohup python3 -u api_mobile.py > api_mobile.log 2>&1 &
+sleep 2
+
+echo ">> 3. Iniciando Bot de WhatsApp (Playwright)..."
+nohup python3 -u whatsapp_bot.py > whatsapp.log 2>&1 &
 
 echo ""
 echo ">> ¡PROCESO DE REINICIO CON COMPLETO ÉXITO! 🚀"
