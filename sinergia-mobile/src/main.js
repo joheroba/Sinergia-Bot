@@ -117,7 +117,7 @@ document.querySelector('#app').innerHTML = `
   <!-- Analytics Modal (Hidden by default) -->
   <div id="modal-analitica" class="screen" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto;">
     <div class="glass-card" style="margin: 2rem 1rem; position: relative;">
-      <i data-lucide="x" id="btn-close-analitica" style="position: absolute; right: 1rem; top: 1rem; cursor: pointer; color: var(--text-muted);"></i>
+      <div id="btn-close-analitica" style="position: absolute; right: 1rem; top: 1rem; cursor: pointer; color: var(--text-muted); z-index: 50; padding: 0.5rem;"><i data-lucide="x"></i></div>
       <h3 style="color: #10b981; margin-bottom: 1rem;">Análisis de Fin de Ciclo</h3>
       
       <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
@@ -165,7 +165,7 @@ document.querySelector('#app').innerHTML = `
   <!-- Settings Modal (Hidden by default) -->
   <div id="modal-settings" class="screen" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto;">
     <div class="glass-card" style="margin: 2rem 1rem; position: relative;">
-      <i data-lucide="x" id="btn-close-settings" style="position: absolute; right: 1rem; top: 1rem; cursor: pointer; color: var(--text-muted);"></i>
+      <div id="btn-close-settings" style="position: absolute; right: 1rem; top: 1rem; cursor: pointer; color: var(--text-muted); z-index: 50; padding: 0.5rem;"><i data-lucide="x"></i></div>
       <h3 style="color: var(--gold-light); margin-bottom: 1rem;">Configuración de Redes</h3>
       
       <div class="input-group">
@@ -203,7 +203,7 @@ document.querySelector('#app').innerHTML = `
   <!-- Cobros & QRs Modal (Hidden by default) -->
   <div id="modal-cobros" class="screen" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto;">
     <div class="glass-card" style="margin: 2rem 1rem; position: relative;">
-      <i data-lucide="x" id="btn-close-cobros" style="position: absolute; right: 1rem; top: 1rem; cursor: pointer; color: var(--text-muted);"></i>
+      <div id="btn-close-cobros" style="position: absolute; right: 1rem; top: 1rem; cursor: pointer; color: var(--text-muted); z-index: 50; padding: 0.5rem;"><i data-lucide="x"></i></div>
       <h3 style="color: var(--gold-light); margin-bottom: 1rem;">Mis Cobros y QRs</h3>
       <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Sube tus códigos QR y cuentas bancarias para que el Bot cierre ventas a tu nombre.</p>
       
@@ -243,7 +243,7 @@ document.querySelector('#app').innerHTML = `
   <!-- Prospectar Modal (Hidden by default) -->
   <div id="modal-prospectar" class="screen" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto;">
     <div class="glass-card" style="margin: 2rem 1rem; position: relative;">
-      <i data-lucide="x" id="btn-close-prospectar" style="position: absolute; right: 1rem; top: 1rem; cursor: pointer; color: var(--text-muted);"></i>
+      <div id="btn-close-prospectar" style="position: absolute; right: 1rem; top: 1rem; cursor: pointer; color: var(--text-muted); z-index: 50; padding: 0.5rem;"><i data-lucide="x"></i></div>
       <h3 style="color: var(--gold-light); margin-bottom: 1rem;">Cruzar Datos y Prospectar</h3>
       <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Ingresa tus credenciales de Gano iTouch para cruzar tu red con tu agenda telefónica y encontrar inactivos.</p>
       
