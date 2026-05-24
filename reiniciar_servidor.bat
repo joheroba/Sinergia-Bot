@@ -8,7 +8,7 @@ echo Conectando con el servidor primario: 45.55.92.211...
 echo Escribe tu contrasena maestra del servidor cuando te la solicite y dale ENTER.
 echo.
 
-ssh -o StrictHostKeyChecking=no root@45.55.92.211 "cd /root/GanoiTouch && git fetch origin && git reset --hard origin/main && bash restart.sh"
+ssh -o StrictHostKeyChecking=no root@45.55.92.211 "cd /root/GanoiTouch && bash restart_ninja.sh"
 
 echo.
 echo =======================================================

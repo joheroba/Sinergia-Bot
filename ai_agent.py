@@ -234,7 +234,7 @@ def calificar_prospecto(mensaje):
         print(f"Error calificador Gemini Cloud: {e}")
         return "Bajo"
 
-def generar_copy_ia(id_publicacion, whatsapp_phone, custom_store_url=None):
+def generar_copy_ia(id_publicacion, whatsapp_phone, custom_store_url=None, idioma="Español", zona="Mercado General"):
     """
     Genera un texto persuasivo (copywriting) para redes sociales usando Gemini o Gemma 4 Local.
     """
@@ -287,6 +287,7 @@ def generar_copy_ia(id_publicacion, whatsapp_phone, custom_store_url=None):
         "- Termina con un llamado a la acción claro para comprar online o enviar un mensaje.\n"
         "- Escribe con tono enérgico, inspirador y profesional.\n"
         "- Incluye hashtags estratégicos y mantén el texto relativamente corto pero muy persuasivo.\n"
+        f"IMPORTANTE Y OBLIGATORIO: El idioma estricto para redactar esta publicación es {idioma.upper()}. Adapta absolutamente todo el texto, el tono, los modismos y el enfoque cultural a la siguiente zona geográfica o mercado: {zona.upper()}.\n"
     )
 
     # Enlace de la tienda
@@ -301,7 +302,8 @@ def generar_copy_ia(id_publicacion, whatsapp_phone, custom_store_url=None):
         f"Por favor redacta la publicación correspondiente para el ID '{id_publicacion}' (Categoría: {categoria}).\n"
         f"Asegúrate de incluir de forma natural el enlace a mi tienda oficial de afiliado al final:\n"
         f"👉 {store_url}\n"
-        f"Y menciona que pueden escribirme al WhatsApp: +{whatsapp_phone} si tienen dudas.\n"
+        f"Y es ESTRICTAMENTE OBLIGATORIO que incluyas este enlace clickable exacto para WhatsApp:\n"
+        f"📲 https://wa.me/{whatsapp_phone.replace('+', '').replace(' ', '')}\n"
         f"Responde únicamente con el texto completo del post finalizado, listo para copiar y pegar, sin explicaciones ni notas adicionales."
     )
 
@@ -312,7 +314,7 @@ def generar_copy_ia(id_publicacion, whatsapp_phone, custom_store_url=None):
             "Construye autonomía financiera y genera ingresos residuales desde la comodidad de tu hogar asociándote con un gigante mundial del bienestar.\n\n"
             "👉 Conviértete en distribuidor y empieza a crecer hoy mismo:\n"
             f"🔗 {store_url}\n\n"
-            f"O escríbeme directamente al WhatsApp (+{whatsapp_phone}) para darte todos los detalles de la duplicación comercial. 🚀"
+            f"O escríbeme directo haciendo clic aquí para darte los detalles:\n📲 https://wa.me/{whatsapp_phone.replace('+', '').replace(' ', '')} 🚀"
         )
     else:
         fallback_text = (
@@ -320,7 +322,7 @@ def generar_copy_ia(id_publicacion, whatsapp_phone, custom_store_url=None):
             "Empieza tus mañanas llenándote de energía real y antioxidantes profundos gracias a las infusiones enriquecidas con Ganoderma Lucidum soluble de Gano Excel.\n\n"
             "👉 Pídelo 100% seguro en mi portal oficial y recíbelo en casa:\n"
             f"🔗 {store_url}\n\n"
-            f"Dudas o pedidos rápidos al WhatsApp (+{whatsapp_phone}). ¡Sabor y vitalidad garantizada! ☕✨"
+            f"Dudas o pedidos rápidos al WhatsApp haciendo clic aquí:\n📲 https://wa.me/{whatsapp_phone.replace('+', '').replace(' ', '')} ☕✨"
         )
 
     # 1. Intentar con LM Studio (Gemma 4 local)
@@ -350,7 +352,7 @@ def generar_copy_ia(id_publicacion, whatsapp_phone, custom_store_url=None):
         print(f"Error al generar copy con Gemini Cloud: {e}. Usando texto de respaldo...")
         return fallback_text
 
-def generar_copy_personalizado_ia(prompt_usuario, whatsapp_phone, custom_store_url=None):
+def generar_copy_personalizado_ia(prompt_usuario, whatsapp_phone, custom_store_url=None, idioma="Español", zona="Mercado General"):
     """
     Genera un texto persuasivo personalizado basado en un prompt del usuario,
     respetando los lineamientos de la marca y agregando los enlaces oficiales de afiliado.
@@ -365,6 +367,7 @@ def generar_copy_personalizado_ia(prompt_usuario, whatsapp_phone, custom_store_u
         "- Desarrolla la idea del usuario de forma persuasiva y estructurada.\n"
         "- Termina con un llamado a la acción claro.\n"
         "- Escribe con tono enérgico, inspirador y profesional.\n"
+        f"IMPORTANTE Y OBLIGATORIO: El idioma estricto para redactar esta publicación es {idioma.upper()}. Adapta absolutamente todo el texto, el tono, los modismos y el enfoque cultural a la siguiente zona geográfica o mercado: {zona.upper()}.\n"
     )
     
     if custom_store_url:
@@ -378,7 +381,8 @@ def generar_copy_personalizado_ia(prompt_usuario, whatsapp_phone, custom_store_u
         f"Por favor redacta la publicación basada en la instrucción del usuario.\n"
         f"Asegúrate de incluir de forma natural el enlace a mi tienda oficial de afiliado al final:\n"
         f"👉 {store_url}\n"
-        f"Y menciona que pueden escribirme al WhatsApp: +{whatsapp_phone} si tienen dudas.\n"
+        f"Y es ESTRICTAMENTE OBLIGATORIO que incluyas este enlace clickable exacto para WhatsApp:\n"
+        f"📲 https://wa.me/{whatsapp_phone.replace('+', '').replace(' ', '')}\n"
         f"Responde únicamente con el texto completo del post finalizado, listo para copiar y pegar, sin notas ni explicaciones."
     )
     
@@ -387,7 +391,7 @@ def generar_copy_personalizado_ia(prompt_usuario, whatsapp_phone, custom_store_u
         f"Basado en tu idea: '{prompt_usuario}'.\n\n"
         f"👉 Adquiere tus infusiones favoritas de Ganoderma Lucidum en mi portal oficial de afiliado:\n"
         f"🔗 {store_url}\n\n"
-        f"Consultas personalizadas al WhatsApp: +{whatsapp_phone}"
+        f"Consultas personalizadas haciendo clic aquí:\n📲 https://wa.me/{whatsapp_phone.replace('+', '').replace(' ', '')}"
     )
 
     if check_local_llm():
@@ -460,36 +464,57 @@ def generar_invitacion_cafecito_ia(nombre_prospecto, distancia_metros, whatsapp_
         print(f"Error generando invitacion cafecito: {e}")
         return fallback_text
 
-def conversar_prospecto_ia(mensaje_nuevo, link_tienda=None, whatsapp=None):
+def conversar_prospecto_ia(mensaje_nuevo, link_tienda=None, whatsapp=None, idioma="Español", zona="Latinoamérica", media_b64=None, tipo_media=None):
     """
     Simula una conversación en lenguaje natural, actuando como un asesor experto de Gano iTouch.
+    Ahora también puede escuchar audios y ver imágenes enviadas por WhatsApp.
     """
     import os
+    import database_manager
+    
+    # Extraer perfil del afiliado desde la matriz SQLite
+    afiliado = None
+    if whatsapp:
+        afiliado = database_manager.obtener_afiliado(whatsapp)
+        
     store_url = link_tienda if link_tienda else f"https://peru.ganoitouch.biz/{os.getenv('GANO_ITOUCH_STORE', 'joherobacafe')}"
     whatsapp_phone = whatsapp if whatsapp else os.getenv("WHATSAPP_PHONE", "51947347666")
+    idioma_env = os.getenv("IDIOMA_PUBLICACION", idioma)
+    zona_env = os.getenv("ZONA_GEOGRAFICA", zona)
+    
+    # Variables financieras por defecto o del afiliado
+    tipo_cambio_actual = afiliado["tipo_cambio"] if afiliado else float(os.getenv("TIPO_CAMBIO", 3.85))
+    cta_bcp_actual = afiliado["cta_bcp"] if afiliado and afiliado["cta_bcp"] else os.getenv("CTA_BCP", "Solicitar por interno")
+    cta_interbank_actual = afiliado["cta_interbank"] if afiliado and afiliado["cta_interbank"] else os.getenv("CTA_INTERBANK", "Solicitar por interno")
+    nombre_lider = afiliado["nombre"] if afiliado else os.getenv("FACEBOOK_PAGE_NAME", "Jorge Rodríguez")
     
     system_context = (
-        "Eres el asistente de Inteligencia Artificial oficial de Jorge Rodríguez, Diamante de Gano iTouch.\n"
-        "Tu objetivo es conversar de forma extremadamente humana, cálida, empática y persuasiva con prospectos de WhatsApp.\n"
-        "Responde sus preguntas con base en los 4 Pilares de Gano iTouch:\n"
-        "1. ENERGIZA (Café 3en1, Classic, Chocolate saludable sin taquicardia).\n"
-        "2. REVITALIZA (Nutrición celular con Ganoderma Lucidum soluble, defensa inmune).\n"
-        "3. ARMONIZA (Anti-estrés, antioxidantes, paz mental).\n"
-        "4. SOCIALIZA (Network marketing profesional, duplicación de redes, libertad financiera).\n\n"
-        "RESTRICCIÓN CRÍTICA: No hagas promesas de curación médica ('no cura el cáncer, diabetes, etc.'). "
-        "Enfócate en bienestar general, nutrición celular profunda y antioxidantes.\n"
-        "Invita de forma muy natural a probar los productos en tu tienda virtual o a agendar una cita de negocios.\n"
-        f"🔗 Tienda Oficial: {store_url}\n"
-        f"📲 WhatsApp del Líder: +{whatsapp_phone}\n\n"
-        "Mantén tus respuestas relativamente cortas (máximo 2 párrafos de 3-4 líneas cada uno) para que se lean natural en WhatsApp, "
-        "usando negritas de forma elegante y emojis cordiales."
+        f"Eres el asistente de Inteligencia Artificial oficial de {nombre_lider}, líder de Gano iTouch.\\n"
+        "Tu objetivo principal es cerrar ventas y afiliaciones, actuando con muchísima empatía y profesionalismo.\\n"
+        "Si el usuario envía una nota de voz, escúchala y respóndele por escrito de forma muy cálida.\\n\\n"
+        "PROTOCOLOS DE CIERRE (MUY IMPORTANTE):\\n"
+        "1. Si el prospecto quiere COMPRAR para recoger en Sede o AFILIARSE, tú debes guiarlo como si fueras un formulario interactivo.\\n"
+        "2. Pídele amablemente que te envíe sus datos *POR ESCRITO* (Nombre completo, DNI, Correo, Celular y Sede de Recojo) "
+        "y adicionalmente, por seguridad de Gano Excel, que mande una FOTO O PANTALLAZO DE SU DNI.\\n"
+        "3. REGLAS FINANCIERAS Y DE PAGO:\\n"
+        "   - Los precios de Gano iTouch están en DÓLARES (USD). "
+        f"Multiplica por el tipo de cambio de {tipo_cambio_actual} para darle el precio exacto en SOLES (PEN).\\n"
+        "   - **Para Compras Pequeñas (Paquetes Básicos):** Ofrécele pagar por Yape o Plin. "
+        "Usa las etiquetas [ENVIAR_QR_YAPE] o [ENVIAR_QR_PLIN] para que el sistema le envíe la foto del QR. "
+        f"Provee también el celular {whatsapp_phone} a nombre de {nombre_lider}.\\n"
+        "   - **Para Paquetes Grandes (ESP1, ESP2, ESP3):** Debido a los límites de transferencia diaria de Yape/Plin, "
+        "NO ofrezcas código QR. En su lugar, ofrécele primero el link de la Pasarela de Pagos Oficial de Gano iTouch para que pague seguro con tarjeta, "
+        f"o bríndale las Cuentas Bancarias de {nombre_lider} si no maneja tarjetas web:\\n"
+        f"     * BCP: {cta_bcp_actual}\\n"
+        f"     * Interbank: {cta_interbank_actual}\\n"
+        "4. Cuando el cliente haya enviado todos sus datos, la foto del DNI y el pago esté confirmado o el prospecto vaya a usar la pasarela, "
+        "finaliza el mensaje diciendo la frase secreta '[CIERRE LISTO]', y dile al cliente que el Director se comunicará en breve.\\n\\n"
+        "RESTRICCIÓN CRÍTICA: No hagas promesas de curación médica. "
+        "Mantén tus respuestas relativamente cortas (máximo 2 párrafos de 3-4 líneas cada uno) para WhatsApp.\\n"
+        f"IMPORTANTE Y OBLIGATORIO: El idioma estricto para conversar es {idioma_env.upper()}. Adapta tu tono a: {zona_env.upper()}."
     )
     
-    prompt = (
-        f"{system_context}\n\n"
-        f"El prospecto dice: '{mensaje_nuevo}'\n\n"
-        "Escribe la respuesta directa para el chat de WhatsApp:"
-    )
+    prompt = f"{system_context}\\n\\nEl prospecto dice: '{mensaje_nuevo}'\\n\\nEscribe la respuesta directa para el chat de WhatsApp:"
 
     fallback_text = (
         "☕️ ¡Hola! Qué gusto saludarte. Soy el asistente de Jorge Rodríguez. "
@@ -508,14 +533,116 @@ def conversar_prospecto_ia(mensaje_nuevo, link_tienda=None, whatsapp=None):
         return fallback_text
 
     import google.generativeai as genai
+    import base64
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-2.5-flash')
+    
+    # Usar el modelo Flash que soporta Audio, Imágenes y Texto rápidamente
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
     try:
-        response = model.generate_content(prompt, request_options={"timeout": 15.0})
+        contents = [prompt]
+        if media_b64 and tipo_media:
+            # Eliminar prefijo data: si existiera
+            b64_clean = media_b64.split(",")[1] if "," in media_b64 else media_b64
+            media_data = base64.b64decode(b64_clean)
+            
+            mime_type = "audio/ogg" if tipo_media == "audio" else "image/jpeg"
+            contents.insert(0, {
+                "mime_type": mime_type,
+                "data": media_data
+            })
+            
+        response = model.generate_content(contents, request_options={"timeout": 30.0})
         return response.text.strip()
     except Exception as e:
         print(f"Error en conversación de WhatsApp: {e}")
         return fallback_text
+
+async def extraer_kpi_automatico(username, password):
+    """Ejecuta Playwright en modo silencioso para extraer el texto del Backoffice."""
+    from playwright.async_api import async_playwright
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(headless=True)
+        page = await browser.new_page()
+        try:
+            await page.goto("https://peru.ganoitouch.biz/Login", timeout=60000)
+            user_input = page.locator('input[type="text"], input[name*="user"], input[name*="login"]').first
+            pass_input = page.locator('input[type="password"]').first
+            await user_input.wait_for(timeout=15000)
+            await user_input.fill(username)
+            await pass_input.fill(password)
+            await pass_input.press("Enter")
+            await page.wait_for_timeout(10000)
+            texto_pagina = await page.inner_text("body")
+            return texto_pagina[:1500] # Limitar a la parte superior donde suelen estar los KPIs
+        except Exception as e:
+            return f"Error en scraping: {e}"
+        finally:
+            await browser.close()
+
+def analizar_texto_estrategia(texto_backoffice):
+    """Analiza el texto plano del Backoffice (sin imagen) para dar una estrategia."""
+    try:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key: return "❌ GEMINI_API_KEY no configurada."
+
+        import google.generativeai as genai
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        prompt = (
+            "Eres el Director Estratégico de un afiliado de Gano Excel / Gano iTouch.\\n"
+            "He extraído el siguiente texto del panel de control (Backoffice) del usuario para el cierre del ciclo de 4 semanas.\\n\\n"
+            f"TEXTO EXTRAÍDO:\\n{texto_backoffice}\\n\\n"
+            "TUS TAREAS:\\n"
+            "1. Identifica los Puntos de Volumen (PV/CV), rama izquierda y derecha, e Inactividad si aplica.\\n"
+            "2. Diseña un 'Plan de Acción y Agenda Diaria' detallado para las próximas 4 semanas.\\n"
+            "3. Indícale si necesita hacer su recompra urgente de 50 PV, a cuántos prospectar, y en qué rama enfocarse.\\n"
+            "Usa un tono motivador de líder de Redes de Mercadeo."
+        )
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"Hubo un error al generar la estrategia: {e}"
+
+def analizar_kpi_y_estrategia(imagen_bytes):
+    """
+    Recibe una imagen (bytes) del Backoffice y usa Gemini Vision para extraer los KPIs 
+    (PV, CV, etc.) y generar una agenda diaria estratégica para el ciclo de 4 semanas.
+    """
+    try:
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            return "❌ Error: GEMINI_API_KEY no configurada."
+
+        import google.generativeai as genai
+        
+        # Configurar modelo con capacidades de visión
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        prompt = (
+            "Eres un experto en Redes de Mercadeo y el Director Estratégico de un afiliado de Gano Excel / Gano iTouch.\\n"
+            "El usuario ha subido una captura de pantalla de su Back Office (oficina virtual) para el análisis de fin de ciclo de 4 semanas.\\n\\n"
+            "TUS TAREAS:\\n"
+            "1. Analiza la imagen y extrae (si se ven) los puntos de Volumen Personal (PV) y Volumen Grupal (CV).\\n"
+            "2. Basado en esos números, genera un 'Plan de Acción y Agenda Diaria' para las próximas 4 semanas.\\n"
+            "3. Indícale metas claras: a cuántas personas contactar, qué productos promocionar, y cómo balancear su árbol binario para maximizar ganancias.\\n\\n"
+            "Tu respuesta debe ser muy motivadora, profesional, y usar el lenguaje de Gano Excel (Salud, Prosperidad, Diamante, Re-consumo).\\n"
+            "Si no logras ver los números en la imagen, asume que recién inicia el ciclo y dale una estrategia agresiva de arranque."
+        )
+
+        image_parts = [
+            {
+                "mime_type": "image/jpeg",
+                "data": imagen_bytes
+            }
+        ]
+
+        response = model.generate_content([prompt, image_parts[0]])
+        return response.text
+
+    except Exception as e:
+        print(f"Error al analizar KPI con IA: {e}")
+        return f"Hubo un error al analizar la imagen de tu Backoffice: {e}"
 
 if __name__ == "__main__":
     # Prueba rápida con codificación de consola segura

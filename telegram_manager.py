@@ -220,7 +220,9 @@ async def manejar_generar_post(chat_id, categoria, solo_texto=False):
         
     # 3. Generar Copy Persuasivo con IA (inyectando el link del distribuidor)
     try:
-        copy_ia = ai_agent.generar_copy_ia(nuevo_id, custom_whatsapp, custom_link)
+        idioma = perfil.get("idioma", "Español")
+        zona = perfil.get("zona", "Latinoamérica")
+        copy_ia = ai_agent.generar_copy_ia(nuevo_id, custom_whatsapp, custom_link, idioma=idioma, zona=zona)
     except Exception as e:
         copy_ia = (
             f"¡Descubre el poder del bienestar natural con Gano iTouch! ☕🍄\n"
@@ -409,6 +411,8 @@ async def manejar_callback(callback):
             "• <code>/texto_negocio</code>: Borrador de SOLO texto de Redes.\n"
             "• <code>/link [enlace]</code>: Registra tu enlace de afiliado.\n"
             "• <code>/whatsapp [numero]</code>: Registra tu WhatsApp corporativo.\n"
+            "• <code>/idioma [idioma]</code>: Cambia el idioma de la IA (Ej: Inglés).\n"
+            "• <code>/zona [país]</code>: Adapta modismos a tu país.\n"
             "• <code>/start</code>: Abre el panel interactivo principal."
         )
         await notifications.enviar_mensaje_interactivo(txt, chat_id=chat_id)
@@ -491,7 +495,9 @@ async def manejar_mensaje_texto(chat_id, text, from_user):
             prompt_usuario = "General, destaca la energía celular, los antioxidantes y la delicia de las bebidas de Ganoderma Lucidum."
             
         try:
-            texto_ia = ai_agent.generar_copy_personalizado_ia(prompt_usuario, user_phone, user_store)
+            idioma_cfg = perfil.get("idioma", "Español") if perfil else "Español"
+            zona_cfg = perfil.get("zona", "Latinoamérica") if perfil else "Latinoamérica"
+            texto_ia = ai_agent.generar_copy_personalizado_ia(prompt_usuario, user_phone, user_store, idioma=idioma_cfg, zona=zona_cfg)
         except Exception as e_ia:
             print(f"Error generating custom copy: {e_ia}")
             texto_ia = (
@@ -591,6 +597,40 @@ async def manejar_mensaje_texto(chat_id, text, from_user):
         await notifications.enviar_mensaje_interactivo(f"✅ <b>WhatsApp Actualizado:</b> +{numero}. Todo listo para tus copies de prospección.", chat_id=chat_id)
         return
 
+    elif text_strip.startswith("/idioma"):
+        if not perfil:
+            await notifications.enviar_mensaje_interactivo("⚠️ Primero debes registrarte con el comando: `/link [tu_enlace]`", chat_id=chat_id)
+            return
+            
+        parts = text_strip.split(maxsplit=1)
+        if len(parts) < 2:
+            await notifications.enviar_mensaje_interactivo("⚠️ <b>Uso correcto:</b> <code>/idioma [idioma]</code>\nEjemplo: <code>/idioma Inglés</code>", chat_id=chat_id)
+            return
+            
+        nuevo_idioma = parts[1]
+        afiliados[str(chat_id)]["idioma"] = nuevo_idioma
+        guardar_afiliados(afiliados)
+        
+        await notifications.enviar_mensaje_interactivo(f"🌎 <b>Idioma Actualizado:</b> La IA redactará tus publicaciones en <b>{nuevo_idioma}</b>.", chat_id=chat_id)
+        return
+
+    elif text_strip.startswith("/zona"):
+        if not perfil:
+            await notifications.enviar_mensaje_interactivo("⚠️ Primero debes registrarte con el comando: `/link [tu_enlace]`", chat_id=chat_id)
+            return
+            
+        parts = text_strip.split(maxsplit=1)
+        if len(parts) < 2:
+            await notifications.enviar_mensaje_interactivo("⚠️ <b>Uso correcto:</b> <code>/zona [país o región]</code>\nEjemplo: <code>/zona Estados Unidos</code>", chat_id=chat_id)
+            return
+            
+        nueva_zona = parts[1]
+        afiliados[str(chat_id)]["zona"] = nueva_zona
+        guardar_afiliados(afiliados)
+        
+        await notifications.enviar_mensaje_interactivo(f"📍 <b>Zona Geográfica Actualizada:</b> La IA adaptará sus modismos al público de <b>{nueva_zona}</b>.", chat_id=chat_id)
+        return
+
     # --- CONTROL DE ACCESO ---
     if not perfil or not perfil.get("activo"):
         await notifications.enviar_mensaje_interactivo(
@@ -656,6 +696,8 @@ async def manejar_mensaje_texto(chat_id, text, from_user):
             "• <code>/boost</code> o <code>/impulsar</code>: Panel de viralización en equipo.\n"
             "• <code>/link [enlace]</code>: Actualiza tu enlace de Gano iTouch.\n"
             "• <code>/whatsapp [numero]</code>: Actualiza tu WhatsApp.\n"
+            "• <code>/idioma [idioma]</code>: Cambia el idioma de los textos.\n"
+            "• <code>/zona [país]</code>: Adapta modismos a tu país.\n"
             "• <code>/start</code>: Abre el panel principal interactivo."
         )
         await notifications.enviar_mensaje_interactivo(txt, chat_id=chat_id)
@@ -781,104 +823,119 @@ async def auto_exchange_facebook_token():
                     return
                 long_token = res_data.get("access_token")
                 
-                # 2. Obtener lista de páginas (con limit=100 para evitar paginación truncada)
-                pages_url = f"https://graph.facebook.com/v20.0/me/accounts?limit=100&access_token={long_token}"
-                async with session.get(pages_url) as pages_response:
-                    pages_data = await pages_response.json()
-                    if pages_response.status != 200:
-                        print(f">> [Meta Auto-Exchanger] Error obteniendo páginas: {pages_data}")
-                        return
-                    
-                    pages_list = pages_data.get("data", [])
-                    if not pages_list:
-                        print(">> [Meta Auto-Exchanger] No se encontraron páginas asociadas a este token.")
-                        return
+                # 2. Intentar obtener el token directamente para la página objetivo
+                env_page_id = os.getenv("FACEBOOK_PAGE_ID")
+                page_name = "Desconocida"
+                page_id = env_page_id
+                page_access_token = None
+                
+                if env_page_id:
+                    print(f">> [Meta Auto-Exchanger] Buscando token directo para el ID: {env_page_id}")
+                    direct_url = f"https://graph.facebook.com/v20.0/{env_page_id}?fields=name,access_token&access_token={long_token}"
+                    async with session.get(direct_url) as direct_resp:
+                        if direct_resp.status == 200:
+                            direct_data = await direct_resp.json()
+                            if "access_token" in direct_data:
+                                page_name = direct_data.get("name", "Gano Excel")
+                                page_access_token = direct_data.get("access_token")
+                                print(f">> [Meta Auto-Exchanger] ¡Éxito! Token obtenido directamente para {page_name}")
+                
+                # 3. Si no se pudo directo, buscar en /me/accounts como fallback
+                if not page_access_token:
+                    print(">> [Meta Auto-Exchanger] No se pudo obtener directo, buscando en /me/accounts...")
+                    pages_url = f"https://graph.facebook.com/v20.0/me/accounts?limit=100&access_token={long_token}"
+                    async with session.get(pages_url) as pages_response:
+                        pages_data = await pages_response.json()
+                        pages_list = pages_data.get("data", [])
                         
-                    # Buscar la página de Gano Excel por ID o por nombre
-                    target_page = None
-                    env_page_id = os.getenv("FACEBOOK_PAGE_ID")
-                    
-                    # A. Intentar buscar por ID de página primero si está definido
-                    if env_page_id:
-                        for page in pages_list:
-                            if str(page.get("id")) == str(env_page_id):
-                                target_page = page
-                                break
-                                
-                    # B. Si no se encuentra por ID, intentar buscar por nombre que contenga "gano excel"
-                    if not target_page:
-                        for page in pages_list:
-                            if "gano excel" in page.get("name", "").lower():
-                                target_page = page
-                                break
-                                
-                    if not target_page:
-                        # Fallback a la primera página si no encuentra la página objetivo
-                        target_page = pages_list[0]
-                        print(f">> [Meta Auto-Exchanger] No se encontró la página objetivo. Usando primera página disponible: {target_page.get('name')}")
-                    
-                    page_name = target_page.get("name")
-                    page_id = target_page.get("id")
-                    page_access_token = target_page.get("access_token")
-                    
-                    print(f">> [Meta Auto-Exchanger] ¡Éxito! Página vinculada: {page_name} (ID: {page_id})")
-                    
-                    # 3. Actualizar archivo .env local/servidor
-                    env_path = ".env"
-                    env_lines = []
-                    if os.path.exists(env_path):
-                        with open(env_path, "r", encoding="utf-8") as f:
-                            env_lines = f.readlines()
+                        if not pages_list:
+                            print(">> [Meta Auto-Exchanger] No se encontraron páginas asociadas a este token.")
+                            return
                             
-                    new_lines = []
-                    keys_to_update = {
-                        "FACEBOOK_PAGE_ID": page_id,
-                        "FACEBOOK_ACCESS_TOKEN": page_access_token
-                    }
-                    keys_seen = set()
-                    
-                    for line in env_lines:
-                        # Ignorar el short token viejo para limpiar
-                        if line.startswith("FACEBOOK_SHORT_TOKEN") or line.startswith("FACEBOOK_APP_ID") or line.startswith("FACEBOOK_APP_SECRET"):
-                            continue
+                        target_page = None
                         
-                        matched = False
-                        for key in keys_to_update:
-                            if line.startswith(f"{key}="):
-                                new_lines.append(f"{key}={keys_to_update[key]}\n")
-                                keys_seen.add(key)
-                                matched = True
-                                break
-                        if not matched:
-                            new_lines.append(line)
-                            
+                        if env_page_id:
+                            for page in pages_list:
+                                if str(page.get("id")) == str(env_page_id):
+                                    target_page = page
+                                    break
+                                    
+                        if not target_page:
+                            for page in pages_list:
+                                if "gano excel" in page.get("name", "").lower():
+                                    target_page = page
+                                    break
+                                    
+                        if not target_page:
+                            target_page = pages_list[0]
+                            print(f">> [Meta Auto-Exchanger] Fallback a primera página: {target_page.get('name')}")
+                        
+                        page_name = target_page.get("name")
+                        page_id = target_page.get("id")
+                        page_access_token = target_page.get("access_token")
+                
+                if not page_access_token:
+                    print(">> [Meta Auto-Exchanger] Error crítico: No se pudo obtener ningún Page Token.")
+                    return
+                
+                print(f">> [Meta Auto-Exchanger] Configurando página vinculada: {page_name} (ID: {page_id})")
+                    
+                # 3. Actualizar archivo .env local/servidor
+                env_path = ".env"
+                env_lines = []
+                if os.path.exists(env_path):
+                    with open(env_path, "r", encoding="utf-8") as f:
+                        env_lines = f.readlines()
+                        
+                new_lines = []
+                keys_to_update = {
+                    "FACEBOOK_PAGE_ID": page_id,
+                    "FACEBOOK_ACCESS_TOKEN": page_access_token
+                }
+                keys_seen = set()
+                
+                for line in env_lines:
+                    # Ignorar el short token viejo para limpiar
+                    if line.startswith("FACEBOOK_SHORT_TOKEN") or line.startswith("FACEBOOK_APP_ID") or line.startswith("FACEBOOK_APP_SECRET"):
+                        continue
+                    
+                    matched = False
                     for key in keys_to_update:
-                        if key not in keys_seen:
+                        if line.startswith(f"{key}="):
                             new_lines.append(f"{key}={keys_to_update[key]}\n")
-                            
-                    with open(env_path, "w", encoding="utf-8") as f:
-                        f.writelines(new_lines)
+                            keys_seen.add(key)
+                            matched = True
+                            break
+                    if not matched:
+                        new_lines.append(line)
                         
-                    # 4. Actualizar afiliados.json para Jorge
-                    afiliados = cargar_afiliados()
-                    admin_chat_id = os.getenv("TELEGRAM_CHAT_ID")
-                    if str(admin_chat_id) in afiliados:
-                        afiliados[str(admin_chat_id)]["facebook_page_id"] = page_id
-                        afiliados[str(admin_chat_id)]["facebook_access_token"] = page_access_token
-                        guardar_afiliados(afiliados)
+                for key in keys_to_update:
+                    if key not in keys_seen:
+                        new_lines.append(f"{key}={keys_to_update[key]}\n")
                         
-                    # Recargar variables de entorno locales
-                    os.environ["FACEBOOK_PAGE_ID"] = page_id
-                    os.environ["FACEBOOK_ACCESS_TOKEN"] = page_access_token
-                        
-                    # 5. Enviar mensaje de victoria en Telegram
-                    await notifications.enviar_alerta(
-                        f"⚡️ <b>CONFIGURACIÓN EXITOSA (API MÁSTER):</b>\n\n"
-                        f"He enlazado la API oficial de Facebook directamente con tu FanPage: <b>{page_name}</b> (ID: <code>{page_id}</code>).\n\n"
-                        f"👉 <i>A partir de ahora, todas tus publicaciones automáticas se harán en menos de 1 segundo sin necesidad de abrir Playwright. ¡Es 100% robusto y no expira jamás!</i> 🚀",
-                        chat_id=admin_chat_id
-                    )
+                with open(env_path, "w", encoding="utf-8") as f:
+                    f.writelines(new_lines)
                     
+                # 4. Actualizar afiliados.json para Jorge
+                afiliados = cargar_afiliados()
+                admin_chat_id = os.getenv("TELEGRAM_CHAT_ID")
+                if str(admin_chat_id) in afiliados:
+                    afiliados[str(admin_chat_id)]["facebook_page_id"] = page_id
+                    afiliados[str(admin_chat_id)]["facebook_access_token"] = page_access_token
+                    guardar_afiliados(afiliados)
+                    
+                # Recargar variables de entorno locales
+                os.environ["FACEBOOK_PAGE_ID"] = page_id
+                os.environ["FACEBOOK_ACCESS_TOKEN"] = page_access_token
+                    
+                # 5. Enviar mensaje de victoria en Telegram
+                await notifications.enviar_alerta(
+                    f"⚡️ <b>CONFIGURACIÓN EXITOSA (API MÁSTER):</b>\n\n"
+                    f"He enlazado la API oficial de Facebook directamente con tu FanPage: <b>{page_name}</b> (ID: <code>{page_id}</code>).\n\n"
+                    f"👉 <i>A partir de ahora, todas tus publicaciones automáticas se harán en menos de 1 segundo sin necesidad de abrir Playwright. ¡Es 100% robusto y no expira jamás!</i> 🚀",
+                    chat_id=admin_chat_id
+                )
+                
     except Exception as e:
         print(f">> [Meta Auto-Exchanger] Excepción crítica: {e}")
 
