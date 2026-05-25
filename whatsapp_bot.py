@@ -135,6 +135,11 @@ async def atender_afiliado(p, afiliado):
                             tipo_media=tipo_media
                         )
                         
+                        if "[IGNORAR]" in respuesta_inyeccion:
+                            print(f"[{nombre_lider}] => [IA] Mensaje ignorado por filtro de SPAM.")
+                            await page.keyboard.press('Escape')
+                            continue
+
                         nivel_interes = ai_agent.calificar_prospecto(texto_recibido)
                         crm_local.registrar_lead(nombre_chat, texto_recibido, nivel_interes)
                         
