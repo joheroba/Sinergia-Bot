@@ -1,0 +1,48 @@
+1. Políticas de Afiliación y Mantenimiento de Red
+Requisitos de Registro
+Edad mínima: Ser mayor de 18 años.
+Personas Naturales: Copia de DNI para ciudadanos peruanos. En caso de ser extranjeros, presentar Carné de Extranjería (CE) junto con cédula de identidad o pasaporte.
+Personas Jurídicas: Vigencia de poderes, ficha RUC y copia de la minuta.
+Documentación obligatoria: Contrato de afiliación completamente llenado, firmado, con huella digital y sin enmendaduras.
+Inversión inicial: Compra obligatoria de productos equivalente a un mínimo de 50 PV (Puntos de Volumen).
+Observaciones de Restricción: Solo está permitido patrocinar a personas que residan en países donde la corporación tenga presencia oficial. El postulante no debe poseer un código activo previo ni contar con restricciones vigentes con la compañía.
+Estado del Código y Reactivación
+Inactividad: Un código pasa a estado inactivo de forma automática si no registra compras durante 6 meses.
+Bloqueo definitivo: Cumplido el primer año del contrato, no es posible realizar una reactivación directa.
+Reafiliación: Solo se autoriza una nueva afiliación si el código ha excedido el año de contrato y se encuentra formalmente inactivo.
+
+2. Gestión Operativa y Trámites Especiales
+Transferencia de País: Para migrar un código a otra sucursal internacional se requiere: Contar con el código en estado activo. Tramitar la solicitud ante el área de Desarrollo de Negocios (DDNN) o la supervisión de la sucursal. Pasar por la evaluación interna de la compañía. Llenar, firmar y legalizar ante notario el formato oficial de transferencia entregado.
+Nacionalización de Código: Para registrar formalmente un código extranjero en el mercado local se debe presentar: Solicitud dirigida a DDNN o supervisión de sucursal. Copia de DNI, o de CE junto con pasaporte/cédula. Contrato de Afiliación específico de Perú. Evaluación del caso por parte de la empresa. Activación del código mediante la compra mínima de 50 PV.
+Logística de Pedidos y Delivery: Las órdenes se tramitan descargando el formulario desde el Back Office y enviándolo junto al comprobante de depósito bancario al correo pedidos@gano-itouch.com.pe. Los costos administrativos de envío a domicilio varían según el volumen: US$ 4 para pedidos de hasta 8 productos. US$ 8 para pedidos de 9 a 21 productos. US$ 15 para pedidos de 22 a 43 productos.
+Atención de Quejas y Solicitudes: Medios de contacto: Presencial en DDNN o supervisión; vía Call Center al 7480630; o por correo electrónico a servicios@gano-itouch.com.pe. Tiempo de respuesta: La compañía cuenta con un plazo máximo de 30 días calendario para emitir una resolución.
+
+3. Plan de Compensación y Estructura Comercial
+Paquetes Ejecutivos de Éxito (ESP): Determinan el porcentaje de ganancia en el Bono Binario durante los primeros meses de aceleración comercial:
+ESP-1: Comisiona al 15% durante 2 meses.
+ESP-2: Comisiona al 16% durante 4 meses.
+ESP-3: Comisiona al 17% durante 6 meses.
+Dinámica de Calificación Mensual y Semanal:
+Estado Activo (Recompra): Mantener un consumo personal mínimo de 50 PV mensuales.
+Binario Calificado: Compra personal mensual de 100 PV y contar con afiliados directos activos en ambas ramas (Izquierda/Derecha).
+Regla de Sincronización: Las compras se rigen por un calendario de colores (ej. semanas naranjas). Se permite adelantar la semana de compra, pero nunca retrasarla. Perder el estado activo puede provocar la pérdida total del volumen acumulado o de los bonos semanales.
+Estructura de Rangos y Volúmenes (Línea de Pago):
+- Distribuidor (Apprentice): 50 PV Personal, 10% de Pago Binario, Tope Semanal US$ 500
+- Asistente Ejecutivo (Elite): 50 PV Personal, 500 GCV (Rama Pago), 11% Binario, Tope Semanal US$ 1,000
+- Bronce (Bronze): 50 PV Personal, 1,500 GCV, 12% Binario, Tope Semanal US$ 1,250
+- Plata (Silver): 50 PV Personal, 2,500 GCV, 13% Binario, Tope Semanal US$ 2,000
+- Oro (Gold): 100 PV Personal, 4,000 GCV, 14% Binario, Tope Semanal US$ 4,000
+- Platino (Platinum): 100 PV Personal, 8,000 GCV, 15% Binario, Tope Semanal US$ 6,000
+- Diamante (Diamond): 100 PV Personal, 12,000 GCV, 15% Binario, Tope Semanal US$ 6,000
+
+4. Facturación y Cobro de Comisiones en Perú
+Requisitos ante SUNAT: El distribuidor debe registrarse con estado Activo y Habido ante la SUNAT. Las facturas deben estar debidamente autorizadas y ser válidas electrónicamente. Corte de entrega: Las facturas se reciben rigurosamente hasta las 4:00 pm de cada jueves para el procesamiento del ciclo.
+Documentación Bancaria Obligatoria: Para tramitar los pagos en efectivo, el afiliado debe presentar físicamente: Constancia física de la cuenta bancaria en dólares (cuenta principal, ej. BCP). Constancia física de la cuenta corriente en el Banco de la Nación para la gestión de las detracciones de ley.
+Costos de Transferencia y Retenciones Internacionales: Pago Interbancario: Comisión bancaria fija de US$ 6.32 descontada directamente del abono. Emisión de Cheque: Costo administrativo de US$ 1.00.
+Impuesto a las ganancias internacionales: Si la comisión proviene de redes extranjeras, se aplica una tasa de retención en origen según el país emisor: México 35%, Colombia 33%, USA 30%, El Salvador 20%, Costa Rica 15%, Panamá 7.5% (natural)/12.5% (empresas), Puerto Rico 10%.
+
+5. Código de Ética y Prácticas Prohibidas
+Fidelidad de Red: Está prohibido inducir, manipular o influenciar a otros distribuidores para que dejen vencer sus códigos o permanezcan inactivos con la intención de forzar un cambio de línea de patrocinio o colocación en el árbol binario.
+Alteración de Precios: El distribuidor independiente tiene estrictamente prohibido comercializar el producto por debajo del precio oficial de venta final establecido por la empresa.
+Respeto Corporativo: Se cataloga como falta grave emitir declaraciones falsas, difamatorias, calumniosas o despectivas contra los productos, las herramientas logísticas de la compañía o la reputación de otros miembros de la red.
+Fraude Documental: Proveer contratos, solicitudes o recibos con datos o firmas falsas generará sanciones punitivas e inmediatas por parte del comité de ética.

@@ -518,6 +518,13 @@ def conversar_prospecto_ia(mensaje_nuevo, link_tienda=None, whatsapp=None, idiom
         f"IMPORTANTE Y OBLIGATORIO: El idioma estricto para conversar es {idioma_env.upper()}. Adapta tu tono a: {zona_env.upper()}."
     )
     
+    try:
+        with open('conocimiento_manual.txt', 'r', encoding='utf-8') as f:
+            manual_text = f.read()
+        system_context += "\\n\\n--- BASE DE CONOCIMIENTO (MANUAL GANO ITOUCH) ---\\n" + manual_text
+    except Exception:
+        pass
+    
     prompt = f"{system_context}\\n\\nEl prospecto dice: '{mensaje_nuevo}'\\n\\nEscribe la respuesta directa para el chat de WhatsApp:"
 
     fallback_text = (
