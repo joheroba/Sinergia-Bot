@@ -164,12 +164,33 @@ async def atender_afiliado(p, afiliado):
                         
                         respuesta_inyeccion = respuesta_inyeccion.replace("[ENVIAR_QR_YAPE]", "").replace("[ENVIAR_QR_PLIN]", "").strip()
 
+                        # Enviar texto
                         await teclado_wa.click()
                         await page.keyboard.insert_text(respuesta_inyeccion)
                         await page.wait_for_timeout(500)
                         await page.keyboard.press("Enter")
-                        print(f"[{nombre_lider}] => [✓] Respuesta enviada a {nombre_chat}")
+                        print(f"[{nombre_lider}] => [OK] Respuesta de texto enviada a {nombre_chat}")
                         
+                        # Generar y Enviar Audio (TTS)
+                        try:
+                            audio_path = f"respuesta_{afiliado_id}.mp3"
+                            print(f"[{nombre_lider}] => [IA] Generando audio TTS...")
+                            # Usar voz neural realista
+                            os.system(f'edge-tts --text "{respuesta_inyeccion}" --write-media {audio_path} --voice es-MX-JorgeNeural')
+                            if os.path.exists(audio_path):
+                                await page.wait_for_timeout(1000)
+                                await page.locator('div[title="Adjuntar"], span[data-icon="clip"], span[data-icon="plus"]').first.click()
+                                await page.wait_for_timeout(1000)
+                                # WhatsApp tiene un input type="file" que acepta documentos
+                                input_file = page.locator('input[type="file"]').first
+                                await input_file.set_input_files(audio_path)
+                                btn_send = page.locator('span[data-icon="send"]')
+                                await btn_send.wait_for(timeout=10000)
+                                await page.wait_for_timeout(500)
+                                await btn_send.click()
+                                print(f"[{nombre_lider}] => [OK] Audio enviado a {nombre_chat}")
+                        except Exception as e:
+                            print(f"[{nombre_lider}] => [X] Error al enviar audio: {e}")
                         if enviar_yape or enviar_plin:
                             print(f"[{nombre_lider}] => [!] Comando QR detectado. Adjuntando imagen...")
                             try:

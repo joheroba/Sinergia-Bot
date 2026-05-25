@@ -1,2 +1,5 @@
 playwright
 python-dotenv
+google-generativeai
+python-multipart
+edge-tts

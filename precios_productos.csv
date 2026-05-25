@@ -1,0 +1,25 @@
+ID,Categoría,Producto o Paquete,Precio Distribuidor (USD),Precio Retail (USD),Ganancia Directa (USD),PV,CV,Contenido o Detalle
+501,BEBIDAS,Pioir Coffee 3 in 1,24.00,32.00,8.00,15,14.00,-
+507,BEBIDAS,Pioir C'real Spirulina,26.00,34.00,8.00,17,15.00,-
+509,BEBIDAS,Pioir Latte Rico,26.00,34.00,8.00,17,15.00,-
+503,BEBIDAS,Pioir Chocolate Drink,27.00,36.00,9.00,17,15.60,-
+504,BEBIDAS,Pioir Rooibos Drink,26.00,34.00,8.00,17,15.00,-
+502,BEBIDAS,Pioir Black Coffee,24.00,32.00,8.00,15,14.00,-
+505,BEBIDAS,Pioir MochaRico,26.00,34.00,8.00,17,15.00,-
+512,BEBIDAS,Pioir ShokoRico,27.00,36.00,9.00,17,15.60,-
+530,BELLEZA,Reskine Collagen Drink,47.00,60.00,13.00,31,27.60,-
+305,CUIDADO PERSONAL,Piel8Brillo Shampoo (Edición limitada),16.00,21.00,5.00,11,9.00,-
+302,CUIDADO PERSONAL,Kibnabalu Toothpaste,16.00,21.00,5.00,11,9.50,-
+306,CUIDADO PERSONAL,Kibnabalu Transparent Soap,17.00,22.00,5.00,12,10.00,-
+303,CUIDADO PERSONAL,Piel8Brillo Exfoliante (Edición limitada),16.00,21.00,5.00,11,9.00,-
+307,CUIDADO PERSONAL,Piel8Brillo Acondicionador (Edición limitada),16.00,21.00,5.00,11,9.00,-
+897,PAQUETES EJECUTIVOS,ESP 1,200.00,-,-,100,100.00,"2 Coffee 3 in 1, 2 Chocolate, 1 Black Coffee, 1 P8B Exfoliante, 1 P8B Acondicionador"
+898,PAQUETES EJECUTIVOS,ESP 2,500.00,-,-,250,250.00,"10 Coffee 3 in 1, 2 Chocolate, 4 Black Coffee, 1 P8B Exfoliante, 1 P8B Acondicionador"
+899,PAQUETES EJECUTIVOS,ESP 3,1000.00,-,-,500,500.00,"20 Coffee 3 in 1, 5 Chocolate, 9 Black Coffee, 1 P8B Exfoliante, 1 P8B Acondicionador, 1 Reskine Collagen"
+874,PAQUETES DE ASCENSO,Ascenso ESP 1 a ESP 2,300.00,-,-,150,150.00,"8 Coffee 3 in 1, 3 Black Coffee"
+875,PAQUETES DE ASCENSO,Ascenso ESP 1 a ESP 3,800.00,-,-,400,400.00,"18 Coffee 3 in 1, 3 Chocolate, 8 Black Coffee, 1 Reskine Collagen"
+876,PAQUETES DE ASCENSO,Ascenso ESP 2 a ESP 3,500.00,-,-,250,250.00,"10 Coffee 3 in 1, 3 Chocolate, 5 Black Coffee, 1 Reskine Collagen"
+80003,MATERIAL DE MARKETING,Contrato de Afiliación,2.00,-,-,-,-,Paquete de 20 Unidades
+80012,MATERIAL DE MARKETING,One to One (Oportunidad de Negocio),2.00,-,-,-,-,Paquete de 20 Unidades
+80017,MATERIAL DE MARKETING,Mi Gano Plan,5.00,-,-,-,-,1 Unidad
+80026,MATERIAL DE MARKETING,Bolsa biodegradable,2.00,-,-,-,-,1 Unidad

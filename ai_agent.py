@@ -527,6 +527,13 @@ def conversar_prospecto_ia(mensaje_nuevo, link_tienda=None, whatsapp=None, idiom
         system_context += "\\n\\n--- BASE DE CONOCIMIENTO (MANUAL GANO ITOUCH) ---\\n" + manual_text
     except Exception:
         pass
+
+    try:
+        with open('precios_productos.csv', 'r', encoding='utf-8') as f:
+            precios_text = f.read()
+        system_context += "\\n\\n--- CATÁLOGO Y PRECIOS DE PRODUCTOS ---\\n" + precios_text
+    except Exception:
+        pass
     
     prompt = f"{system_context}\\n\\nEl prospecto dice: '{mensaje_nuevo}'\\n\\nEscribe la respuesta directa para el chat de WhatsApp:"
 
