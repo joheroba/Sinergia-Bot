@@ -59,8 +59,8 @@ async def atender_afiliado(p, afiliado):
             await asyncio.sleep(3)
 
         await page.wait_for_selector('#pane-side', timeout=360000)
-        print(f"\\n[{nombre_lider}] [✓] ¡Sesión capturada con éxito!")
-        await notifications.enviar_alerta(f"🟢 *CONECTADO:* El Bot de {nombre_lider} está ACTIVO.")
+        print(f"\\n[{nombre_lider}] [OK] !Sesion capturada con exito!")
+        await notifications.enviar_alerta(f"[CONECTADO]: El Bot de {nombre_lider} esta ACTIVO.")
         if os.path.exists(f"qr_login_{afiliado_id}.png"): os.remove(f"qr_login_{afiliado_id}.png")
     except Exception as e:
         print(f"[{nombre_lider}] [X] No se pudo capturar la sesión: {str(e)}")
@@ -74,7 +74,7 @@ async def atender_afiliado(p, afiliado):
             chats_no_leidos_loc = page.locator('span[aria-label*="no leíd"], span[aria-label*="no leid"]')
             cantidad = await chats_no_leidos_loc.count()
             if cantidad > 0:
-                print(f"[{nombre_lider} - {datetime.now().strftime('%H:%M:%S')}] 🚨 ¡Detectamos {cantidad} prospectos!")
+                print(f"[{nombre_lider} - {datetime.now().strftime('%H:%M:%S')}] [ALERTA] !Detectamos {cantidad} prospectos!")
                 await chats_no_leidos_loc.first.click(force=True)
                 await page.wait_for_timeout(2000)
                 
@@ -139,9 +139,9 @@ async def atender_afiliado(p, afiliado):
                         crm_local.registrar_lead(nombre_chat, texto_recibido, nivel_interes)
                         
                         if "CIERRE LISTO" in respuesta_inyeccion or "DNI" in texto_limpio:
-                            await notifications.enviar_alerta(f"🚨 *POSIBLE CIERRE ({nombre_lider}):* {nombre_chat} está enviando datos.")
+                            await notifications.enviar_alerta(f"[POSIBLE CIERRE ({nombre_lider})]: {nombre_chat} esta enviando datos.")
                         elif nivel_interes == "Alto":
-                            await notifications.enviar_alerta(f"🔥 *LEAD CALIENTE ({nombre_lider}):* {nombre_chat} interesado.")
+                            await notifications.enviar_alerta(f"[LEAD CALIENTE ({nombre_lider})]: {nombre_chat} interesado.")
 
                         enviar_yape = "[ENVIAR_QR_YAPE]" in respuesta_inyeccion
                         enviar_plin = "[ENVIAR_QR_PLIN]" in respuesta_inyeccion
