@@ -111,15 +111,22 @@ async def atender_afiliado(p, afiliado):
                                     reader.readAsDataURL(b);
                                 });
                             }
+                            let textSpan = msg.querySelector('span.selectable-text, span.copyable-text');
+                            if(textSpan && textSpan.innerText.trim() !== "") {
+                                return "text|" + textSpan.innerText.trim();
+                            }
                         }
                         return null;
                     }'''
                     media_resultado = await page.evaluate(js_code)
                     if media_resultado:
-                        tipo, b64 = media_resultado.split("|", 1)
-                        tipo_media = tipo
-                        media_base64 = b64
-                        texto_recibido = f"[{tipo.upper()} RECIBIDO]"
+                        tipo, contenido = media_resultado.split("|", 1)
+                        if tipo == "text":
+                            texto_recibido = contenido
+                        else:
+                            tipo_media = tipo
+                            media_base64 = contenido
+                            texto_recibido = f"[{tipo.upper()} RECIBIDO]"
 
                 print(f"[{nombre_lider}] DEBUG: texto_recibido='{texto_recibido}', media_base64={'Yes' if media_base64 else 'No'}")
 
