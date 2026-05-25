@@ -121,11 +121,15 @@ async def atender_afiliado(p, afiliado):
                         media_base64 = b64
                         texto_recibido = f"[{tipo.upper()} RECIBIDO]"
 
+                print(f"[{nombre_lider}] DEBUG: texto_recibido='{texto_recibido}', media_base64={'Yes' if media_base64 else 'No'}")
+
                 if texto_recibido or media_base64:
                     texto_limpio = str(texto_recibido).strip().lower()
                     
                     teclado_wa = page.locator('div[title="Escribe un mensaje"], div[contenteditable="true"][role="textbox"]').last
-                    if await teclado_wa.is_visible():
+                    is_visible = await teclado_wa.is_visible()
+                    print(f"[{nombre_lider}] DEBUG: teclado visible? {is_visible}")
+                    if is_visible:
                         print(f"[{nombre_lider}] => [IA] Pensando respuesta para {nombre_chat}...")
                         respuesta_inyeccion = ai_agent.conversar_prospecto_ia(
                             mensaje_nuevo=texto_recibido, 
