@@ -20,6 +20,16 @@ def init_db():
             activo INTEGER DEFAULT 1
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ordenes_bot (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            afiliado_id INTEGER NOT NULL,
+            destinatario TEXT NOT NULL,
+            instruccion TEXT NOT NULL,
+            estado TEXT DEFAULT 'PENDIENTE',
+            creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     conn.commit()
     conn.close()
     print(f"[DB] Base de datos {DB_FILE} inicializada correctamente.")
@@ -100,6 +110,45 @@ def obtener_todos_activos():
             "tipo_cambio": row[5]
         })
     return afiliados
+
+def insertar_orden(afiliado_id, destinatario, instruccion):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO ordenes_bot (afiliado_id, destinatario, instruccion)
+        VALUES (?, ?, ?)
+    ''', (afiliado_id, destinatario, instruccion))
+    conn.commit()
+    conn.close()
+
+def obtener_ordenes_pendientes(afiliado_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT id, destinatario, instruccion 
+        FROM ordenes_bot 
+        WHERE afiliado_id = ? AND estado = 'PENDIENTE'
+    ''', (afiliado_id,))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    ordenes = []
+    for row in rows:
+        ordenes.append({
+            "id": row[0],
+            "destinatario": row[1],
+            "instruccion": row[2]
+        })
+    return ordenes
+
+def marcar_orden_completada(orden_id, estado='COMPLETADO'):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        UPDATE ordenes_bot SET estado = ? WHERE id = ?
+    ''', (estado, orden_id))
+    conn.commit()
+    conn.close()
 
 if __name__ == "__main__":
     init_db()

@@ -1,6 +1,6 @@
 import paramiko
 
-def fetch_logs():
+def download_qr():
     host = "45.55.92.211"
     user = "root"
     password = "36C&5U_Z&SH4rq"
@@ -10,16 +10,14 @@ def fetch_logs():
     
     try:
         ssh.connect(host, username=user, password=password, timeout=10)
-        
-        stdin, stdout, stderr = ssh.exec_command("cat /root/GanoiTouch/whatsapp.log")
-        print("--- WHATSAPP LOGS ---")
-        for line in stdout:
-            print(line.strip('\n'))
-            
+        sftp = ssh.open_sftp()
+        sftp.get("/root/GanoiTouch/qr_login_1.png", "C:\\GanoiTouch\\qr_login_1.png")
+        print("QR descargado exitosamente.")
+        sftp.close()
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error descargando QR: {e}")
     finally:
         ssh.close()
 
 if __name__ == "__main__":
-    fetch_logs()
+    download_qr()

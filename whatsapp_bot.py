@@ -71,6 +71,58 @@ async def atender_afiliado(p, afiliado):
     
     while True:
         try:
+            # 1. Verificar si hay órdenes manuales desde la APK o Telegram
+            ordenes = database_manager.obtener_ordenes_pendientes(afiliado_id)
+            for orden in ordenes:
+                print(f"[{nombre_lider}] => [ORDEN MANUAL] Retomando charla con: {orden['destinatario']}")
+                # Buscar al contacto
+                caja_busqueda = page.locator('div[contenteditable="true"][data-tab="3"]')
+                if await caja_busqueda.count() > 0:
+                    await caja_busqueda.fill(orden['destinatario'])
+                    await page.wait_for_timeout(2000)
+                    await page.keyboard.press("Enter")
+                    await page.wait_for_timeout(2000)
+                    
+                    # Generar respuesta usando la IA basada en la instrucción
+                    from ai_agent import conversar_prospecto_ia
+                    instruccion_ia = f"[INSTRUCCIÓN DEL LÍDER]: {orden['instruccion']}"
+                    respuesta_inyeccion = conversar_prospecto_ia(instruccion_ia, afiliado.get("link_tienda", ""), afiliado.get("whatsapp", ""))
+                    
+                    # Evitar errores si hay comandos
+                    enviar_yape = "[ENVIAR_QR_YAPE]" in respuesta_inyeccion
+                    enviar_plin = "[ENVIAR_QR_PLIN]" in respuesta_inyeccion
+                    respuesta_inyeccion = respuesta_inyeccion.replace("[ENVIAR_QR_YAPE]", "").replace("[ENVIAR_QR_PLIN]", "").strip()
+
+                    # Enviar texto
+                    teclado_wa = page.locator('div[contenteditable="true"][data-tab="10"]')
+                    await teclado_wa.click()
+                    await page.keyboard.insert_text(respuesta_inyeccion)
+                    await page.wait_for_timeout(500)
+                    await page.keyboard.press("Enter")
+                    print(f"[{nombre_lider}] => [OK] Orden de texto enviada a {orden['destinatario']}")
+                    
+                    # Generar Audio
+                    try:
+                        audio_path = f"respuesta_{afiliado_id}.mp3"
+                        os.system(f'edge-tts --text "{respuesta_inyeccion}" --write-media {audio_path} --voice es-MX-JorgeNeural')
+                        if os.path.exists(audio_path):
+                            await page.wait_for_timeout(1000)
+                            await page.locator('div[title="Adjuntar"], span[data-icon="clip"], span[data-icon="plus"]').first.click()
+                            await page.wait_for_timeout(1000)
+                            input_file = page.locator('input[type="file"]').first
+                            await input_file.set_input_files(audio_path)
+                            btn_send = page.locator('span[data-icon="send"]')
+                            await btn_send.wait_for(timeout=10000)
+                            await page.wait_for_timeout(500)
+                            await btn_send.click()
+                            print(f"[{nombre_lider}] => [OK] Audio de orden enviado a {orden['destinatario']}")
+                    except Exception as e:
+                        print(f"[{nombre_lider}] => [X] Error al enviar audio de orden: {e}")
+                        
+                # Marcar como completado aunque falle la búsqueda para no ciclarse
+                database_manager.marcar_orden_completada(orden['id'])
+                
+            # 2. Flujo normal (Mensajes no leídos)
             chats_no_leidos_loc = page.locator('span[aria-label*="no leíd"], span[aria-label*="no leid"]')
             cantidad = await chats_no_leidos_loc.count()
             if cantidad > 0:

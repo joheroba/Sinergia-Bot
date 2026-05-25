@@ -1,6 +1,6 @@
 import paramiko
 
-def fetch_logs():
+def check_vps():
     host = "45.55.92.211"
     user = "root"
     password = "36C&5U_Z&SH4rq"
@@ -11,10 +11,11 @@ def fetch_logs():
     try:
         ssh.connect(host, username=user, password=password, timeout=10)
         
-        stdin, stdout, stderr = ssh.exec_command("cat /root/GanoiTouch/whatsapp.log")
-        print("--- WHATSAPP LOGS ---")
-        for line in stdout:
-            print(line.strip('\n'))
+        stdin, stdout, stderr = ssh.exec_command("python3 /root/GanoiTouch/whatsapp_bot.py")
+        print("STDOUT:")
+        print(stdout.read().decode())
+        print("STDERR:")
+        print(stderr.read().decode())
             
     except Exception as e:
         print(f"Error: {e}")
@@ -22,4 +23,4 @@ def fetch_logs():
         ssh.close()
 
 if __name__ == "__main__":
-    fetch_logs()
+    check_vps()

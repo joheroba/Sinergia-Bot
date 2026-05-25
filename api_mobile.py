@@ -56,6 +56,24 @@ async def login(request):
     except Exception as e:
         return add_cors_headers(web.json_response({"success": False, "message": str(e)}, status=500))
 
+@routes.post('/api/ordenes')
+async def crear_orden(request):
+    try:
+        data = await request.json()
+        afiliado_id = data.get("afiliado_id")
+        destinatario = data.get("destinatario")
+        instruccion = data.get("instruccion")
+        
+        if not afiliado_id or not destinatario or not instruccion:
+            return add_cors_headers(web.json_response({"success": False, "message": "Faltan datos obligatorios"}, status=400))
+            
+        import database_manager
+        database_manager.insertar_orden(afiliado_id, destinatario, instruccion)
+        
+        return add_cors_headers(web.json_response({"success": True, "message": "Orden de intervención enviada al bot"}))
+    except Exception as e:
+        return add_cors_headers(web.json_response({"success": False, "message": str(e)}, status=500))
+
 @routes.post('/api/register')
 async def register(request):
     try:

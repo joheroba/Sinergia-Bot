@@ -96,6 +96,10 @@ document.querySelector('#app').innerHTML = `
         <i data-lucide="user-plus" style="color: #ec4899;"></i>
         <span>Afiliar / Backoffice</span>
       </div>
+      <div class="feature-btn" id="btn-bot-control" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
+        <i data-lucide="bot" style="color: #10b981;"></i>
+        <span>Control del Bot AI</span>
+      </div>
       <div class="feature-btn" id="btn-simulador">
         <i data-lucide="calculator"></i>
         <span>Simulador Servilleta</span>
@@ -163,6 +167,41 @@ document.querySelector('#app').innerHTML = `
       </div>
 
       <div id="kpi-result" style="margin-top: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 8px; font-size: 0.9rem; white-space: pre-wrap; display: none; border: 1px solid var(--gold-primary);">
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- Screen: Bot Control -->
+  <div id="screen-bot-control" class="screen">
+    <div class="glass-card">
+      <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+        <i data-lucide="arrow-left" class="btn-back" onclick="document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById('screen-dashboard').classList.add('active');" style="cursor: pointer;"></i>
+        <h2>Control del Bot IA</h2>
+      </div>
+      
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+        Ordena al bot retomar una conversación por ti. El bot buscará el contacto y le responderá usando Inteligencia Artificial.
+      </p>
+
+      <div class="input-group">
+        <label>Contacto (Nombre o Número en WhatsApp)</label>
+        <input type="text" id="bot-destinatario" class="input-field" placeholder="Ej. Juan Perez" />
+      </div>
+
+      <div class="input-group" style="margin-top: 1rem;">
+        <label>¿Qué quieres que le diga el bot?</label>
+        <textarea id="bot-instruccion" class="input-field" style="min-height: 100px; resize: vertical;" placeholder="Ej. Háblale sobre los beneficios del ganoderma para la gastritis y ofrécele el paquete ESP3."></textarea>
+      </div>
+
+      <button id="btn-enviar-orden" class="btn-primary" style="margin-top: 1.5rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+        <i data-lucide="send"></i>
+        <span class="btn-text">Ejecutar Intervención</span>
+        <div class="loader"></div>
+      </button>
+      
+      <div id="bot-status" style="margin-top: 1rem; text-align: center; color: #10b981; font-weight: 600; display: none;">
+        ¡Orden enviada! Revisa el VPS.
       </div>
     </div>
   </div>
@@ -591,6 +630,7 @@ function setupDashboard(user, token) {
   lucide.createIcons();
   
   window.currentUserToken = token;
+  window.currentUserId = user.id || 1;
 }
 
 btnLogin.addEventListener('click', async () => {
@@ -755,4 +795,51 @@ document.getElementById('btn-afiliar').addEventListener('click', async () => {
 
 document.getElementById('btn-cola').addEventListener('click', () => {
   showToast('No hay posts pendientes en cola.');
+});
+
+// === Bot Control Logic ===
+document.getElementById('btn-bot-control').addEventListener('click', () => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-bot-control').classList.add('active');
+});
+
+document.getElementById('btn-enviar-orden').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-enviar-orden');
+  const destinatario = document.getElementById('bot-destinatario').value.trim();
+  const instruccion = document.getElementById('bot-instruccion').value.trim();
+  const status = document.getElementById('bot-status');
+  
+  if(!destinatario || !instruccion) {
+    showToast("Ingresa el contacto y la instrucción.", true);
+    return;
+  }
+  
+  setLoading(btn, true);
+  status.style.display = 'none';
+  
+  try {
+    const response = await fetch(`${API_BASE}/ordenes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        afiliado_id: window.currentUserId,
+        destinatario: destinatario,
+        instruccion: instruccion
+      })
+    });
+    
+    const data = await response.json();
+    if(data.success) {
+      status.innerText = "¡Orden enviada al bot con éxito!";
+      status.style.display = 'block';
+      document.getElementById('bot-destinatario').value = '';
+      document.getElementById('bot-instruccion').value = '';
+    } else {
+      showToast("Error: " + data.message, true);
+    }
+  } catch(err) {
+    showToast("Error de conexión al enviar orden.", true);
+  } finally {
+    setLoading(btn, false);
+  }
 });

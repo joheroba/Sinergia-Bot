@@ -163,13 +163,17 @@
             const sociosEfectivos = Math.round(totalSocios * (exito / 100));
             const parejasBinario = Math.floor(sociosEfectivos / 2);
 
-            // Ganancias Binarias (Porcentaje promedio 17% para ESP3/ESP2, 10% para consumo)
-            const tasaBinario = (paquete === "CONSUMO") ? 0.10 : 0.17;
+            // Ganancias Binarias (Según Manual Gano iTouch: ESP3=17%, ESP2=16%, ESP1=15%, Consumo=10%)
+            let tasaBinario = 0.10;
+            if (paquete === "ESP3") tasaBinario = 0.17;
+            else if (paquete === "ESP2") tasaBinario = 0.16;
+            else if (paquete === "ESP1") tasaBinario = 0.15;
+
             const gananciaBinariaPaquetes = parejasBinario * (cv * tasaBinario);
             
             // Si la red compra paquetes una vez, cobran el binario de paquetes.
-            // Si solo consumen café mensualmente (48 CV):
-            const gananciaMensualCafe = parejasBinario * (48 * 0.17); // Payout residual fijo del consumo de café
+            // Si solo consumen café mensualmente (48 CV - residual):
+            const gananciaMensualCafe = parejasBinario * (48 * tasaBinario); // Payout residual ajustado a la tasa del paquete elegido
 
             // Bono Gen5 Estimado (Simplificado: asumiendo una duplicación perfecta de tus primeros 'R' directos)
             let gananciaGen5 = 0;
