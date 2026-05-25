@@ -18,5 +18,8 @@ historial_multimedia.json
 fallo_imagen_*.png
 s i n e r g i a _ c l o u d . d b  
 playwright_whatsapp_1/
+*.db
+*.log
+
 qrs/
 *.json

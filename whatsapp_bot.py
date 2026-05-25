@@ -219,10 +219,17 @@ async def orquestador_principal():
     print("==================================================")
     print("  SINERGIA ORCHESTRATOR (MULTI-TENANT WHATSAPP)   ")
     print("==================================================")
+    
+    database_manager.init_db()
     afiliados = database_manager.obtener_todos_activos()
     if not afiliados:
         print("[!] No hay afiliados activos en la base de datos.")
-        return
+        print("[!] Agregando usuario administrador por defecto...")
+        database_manager.registrar_o_actualizar_afiliado(
+            nombre=os.getenv("FACEBOOK_PAGE_NAME", "Jorge Rodríguez"),
+            whatsapp=os.getenv("WHATSAPP_PHONE", "51947347666").replace(" ", "").replace("-", "")
+        )
+        afiliados = database_manager.obtener_todos_activos()
         
     print(f">> Iniciando orquestador para {len(afiliados)} afiliados en paralelo...")
     async with async_playwright() as p:
