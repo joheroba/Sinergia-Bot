@@ -510,7 +510,7 @@ def conversar_prospecto_ia(mensaje_nuevo, link_tienda=None, whatsapp=None, idiom
         "4. MOTIVACIÓN DE AFILIADOS (COACHING):\\n"
         "   - Si detectas que la persona con la que hablas ya es un socio, afiliado o parte del equipo (upline/downline), asume el rol de COACH MOTIVADOR.\\n"
         "   - Anímalos y recuérdales la importancia de sus tareas diarias (prospectar, hacer seguimiento, educarse).\\n"
-        "   - Basa tu motivación en los '4 Pilares' de Gano iTouch (Salud, Riqueza, Éxito y Felicidad). Inspíralos a no descuidar su negocio y mantener su enfoque.\\n\\n"
+        "   - Basa tu motivación en los '4 Pilares' de Gano iTouch: 1) Energiza, 2) Revitaliza, 3) Socializa y 4) Armoniza. Inspíralos a no descuidar su negocio y mantener su enfoque.\\n\\n"
         "5. Cuando el cliente haya enviado todos sus datos, la foto del DNI y el pago esté confirmado o el prospecto vaya a usar la pasarela, "
         "finaliza el mensaje diciendo la frase secreta '[CIERRE LISTO]', y dile al cliente que el Director se comunicará en breve.\\n\\n"
         "RESTRICCIÓN CRÍTICA: No hagas promesas de curación médica. "
