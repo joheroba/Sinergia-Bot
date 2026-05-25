@@ -11,6 +11,7 @@ sleep 2
 
 echo ""
 echo ">> 2. Iniciando Servidor API y Telegram..."
+export PYTHONIOENCODING=utf-8
 nohup python3 -u api_mobile.py > api_mobile.log 2>&1 &
 sleep 2
 
