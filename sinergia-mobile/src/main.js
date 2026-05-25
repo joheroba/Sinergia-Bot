@@ -1,5 +1,6 @@
 import './style.css'
 import { Contacts } from '@capacitor-community/contacts';
+import { Browser } from '@capacitor/browser';
 
 document.querySelector('#app').innerHTML = `
   <!-- Background Glows -->
@@ -91,6 +92,10 @@ document.querySelector('#app').innerHTML = `
     </button>
 
     <div class="feature-grid">
+      <div class="feature-btn" id="btn-afiliar" style="background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.3);">
+        <i data-lucide="user-plus" style="color: #ec4899;"></i>
+        <span>Afiliar / Backoffice</span>
+      </div>
       <div class="feature-btn" id="btn-simulador">
         <i data-lucide="calculator"></i>
         <span>Simulador Servilleta</span>
@@ -738,6 +743,14 @@ btnReclutar.addEventListener('click', async () => {
 
 document.getElementById('btn-simulador').addEventListener('click', () => {
   window.location.href = '/simulador.html';
+});
+
+document.getElementById('btn-afiliar').addEventListener('click', async () => {
+  try {
+    await Browser.open({ url: 'https://peru.ganoitouch.biz/' });
+  } catch (e) {
+    window.open('https://peru.ganoitouch.biz/', '_blank');
+  }
 });
 
 document.getElementById('btn-cola').addEventListener('click', () => {

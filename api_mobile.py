@@ -264,15 +264,21 @@ async def cruzar_prospectos(request):
         username = data.get("username")
         password = data.get("password")
         phone_contacts = data.get("phone_contacts", [])
+        is_final_chunk = data.get("is_final_chunk", True)
+        chunk_index = data.get("chunk_index", 1)
+        total_contacts = data.get("total_contacts", len(phone_contacts))
         
         if not username or not password:
             return add_cors_headers(web.json_response({"status": "error", "message": "Faltan credenciales"}))
             
-        # Simular conexión al Backoffice de Gano iTouch
-        await asyncio.sleep(2.5) # Simular latencia de IA y red
+        # Simular procesamiento de IA
+        await asyncio.sleep(1.0) # Simular latencia
         
-        # Generar reporte simulado de IA
-        reporte = f"✅ <b>Cruce Exitoso (Gano iTouch Connect)</b>\n\nConectado al Backoffice de usuario: {username}\nSe escanearon {len(phone_contacts)} contactos en tu agenda telefónica.\n\n"
+        if not is_final_chunk:
+            return add_cors_headers(web.json_response({"status": "partial", "message": f"Lote {chunk_index} procesado correctamente."}))
+        
+        # Generar reporte simulado de IA (solo en el lote final o si no hay lotes)
+        reporte = f"✅ <b>Cruce Exitoso (Gano iTouch Connect)</b>\n\nConectado al Backoffice de usuario: {username}\nSe escanearon {total_contacts} contactos en tu agenda telefónica.\n\n"
         reporte += "🔍 <b>Hallazgos de la Inteligencia Artificial:</b>\n"
         if len(phone_contacts) > 0:
             reporte += "• <b>3 prospectos inactivos</b> detectados en tu agenda que coinciden con códigos en tu red (Lado Derecho).\n"
