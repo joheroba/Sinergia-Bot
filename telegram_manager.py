@@ -461,6 +461,19 @@ async def manejar_callback(callback):
         caption_desc = "❌ <b>Borrador cancelado y eliminado de la cola del servidor.</b>"
         await notifications.editar_mensaje(message_id, caption_desc, {"inline_keyboard": []}, chat_id=chat_id)
         
+    elif data.startswith("pref_con_"):
+        nombre = data.replace("pref_con_", "")
+        import database_manager
+        # Asumimos afiliado_id=1 para el admin
+        database_manager.actualizar_preferencia_contacto(1, nombre, "CONTESTAR")
+        await notifications.editar_mensaje(message_id, f"✅ Has elegido <b>CONTESTAR</b> automáticamente a: <code>{nombre}</code>.", {"inline_keyboard": []}, chat_id=chat_id)
+
+    elif data.startswith("pref_ign_"):
+        nombre = data.replace("pref_ign_", "")
+        import database_manager
+        database_manager.actualizar_preferencia_contacto(1, nombre, "IGNORAR")
+        await notifications.editar_mensaje(message_id, f"🚫 Has elegido <b>IGNORAR</b> (Lista Negra) a: <code>{nombre}</code>.", {"inline_keyboard": []}, chat_id=chat_id)
+        
     elif data.startswith("invitar_geo_"):
         await manejar_invitacion_callback(chat_id, data, message_id)
 

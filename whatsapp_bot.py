@@ -127,11 +127,60 @@ async def atender_afiliado(p, afiliado):
             cantidad = await chats_no_leidos_loc.count()
             if cantidad > 0:
                 print(f"[{nombre_lider} - {datetime.now().strftime('%H:%M:%S')}] [ALERTA] !Detectamos {cantidad} prospectos!")
+                
+                # Obtener el nombre del chat sin hacer clic aún
+                js_code_name = '''async () => {
+                    let unreadSpans = document.querySelectorAll('span[aria-label*="no leíd"], span[aria-label*="no leid"]');
+                    if (unreadSpans.length > 0) {
+                        let row = unreadSpans[0].closest('div[role="row"]');
+                        if (row) {
+                            let nameTitle = row.querySelector('span[title]');
+                            return nameTitle ? nameTitle.getAttribute('title') : null;
+                        }
+                    }
+                    return null;
+                }'''
+                nombre_chat = await page.evaluate(js_code_name)
+                
+                if nombre_chat:
+                    preferencia = database_manager.obtener_preferencia_contacto(1, nombre_chat)
+                    
+                    if preferencia == 'IGNORAR':
+                        print(f"[{nombre_lider}] => El contacto '{nombre_chat}' está en la Lista Negra. Ignorando.")
+                        await chats_no_leidos_loc.first.click(force=True)
+                        await page.wait_for_timeout(1000)
+                        continue # Salta el procesamiento de IA
+                        
+                    elif preferencia == 'PENDIENTE':
+                        print(f"[{nombre_lider}] => El contacto '{nombre_chat}' está PENDIENTE. Esperando decisión del usuario.")
+                        continue # Lo dejamos sin leer hasta que el usuario decida en Telegram
+                        
+                    elif preferencia is None:
+                        print(f"[{nombre_lider}] => Nuevo contacto detectado '{nombre_chat}'. Solicitando permiso por Telegram.")
+                        database_manager.actualizar_preferencia_contacto(1, nombre_chat, 'PENDIENTE')
+                        
+                        import telegram_manager
+                        import os
+                        chat_id = os.getenv("TELEGRAM_CHAT_ID")
+                        msg = f"💬 <b>NUEVO CHAT DETECTADO</b>\nTienes un mensaje no leído de: <code>{nombre_chat}</code>\n¿Qué deseas que haga Sinergia Bot con este chat?"
+                        markup = {
+                            "inline_keyboard": [
+                                [
+                                    {"text": "🤖 Contestar con IA", "callback_data": f"pref_con_{nombre_chat[:50]}"},
+                                    {"text": "🚫 Ignorar (Lista Negra)", "callback_data": f"pref_ign_{nombre_chat[:50]}"}
+                                ]
+                            ]
+                        }
+                        await telegram_manager.notifications.enviar_mensaje_interactivo(msg, markup, chat_id=chat_id)
+                        continue # Lo dejamos sin leer por ahora
+                
+                # Si es CONTESTAR (o si falló la extracción del nombre y entra por fallback)
                 await chats_no_leidos_loc.first.click(force=True)
                 await page.wait_for_timeout(2000)
                 
                 header_loc = page.locator('header span[dir="auto"]').first
-                nombre_chat = await header_loc.inner_text() if await header_loc.count() > 0 else "Desconocido"
+                nombre_chat = await header_loc.inner_text() if await header_loc.count() > 0 else (nombre_chat or "Desconocido")
+
                 
                 ultimos_mensajes_loc = page.locator('div[class*="message-in"] span.selectable-text[dir="ltr"]')
                 texto_recibido = ""

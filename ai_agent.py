@@ -131,7 +131,7 @@ def analizar_composicion_ia(img_ruta):
         import google.generativeai as genai
         
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         img = Image.open(img_ruta)
         
@@ -224,7 +224,7 @@ def calificar_prospecto(mensaje):
         return "Bajo"
 
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-2.5-flash')
+    model = genai.GenerativeModel('gemini-1.5-flash')
     
     try:
         response = model.generate_content(prompt)
@@ -339,7 +339,7 @@ def generar_copy_ia(id_publicacion, whatsapp_phone, custom_store_url=None, idiom
         return fallback_text
 
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-2.5-flash')
+    model = genai.GenerativeModel('gemini-1.5-flash')
 
     try:
         # Timeout de 15 segundos para evitar bloqueos de red indefinidos
@@ -404,7 +404,7 @@ def generar_copy_personalizado_ia(prompt_usuario, whatsapp_phone, custom_store_u
         return fallback_text
 
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-2.5-flash')
+    model = genai.GenerativeModel('gemini-1.5-flash')
     try:
         response = model.generate_content(prompt, request_options={"timeout": 15.0})
         return response.text.strip()
@@ -456,7 +456,7 @@ def generar_invitacion_cafecito_ia(nombre_prospecto, distancia_metros, whatsapp_
         return fallback_text
 
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-2.5-flash')
+    model = genai.GenerativeModel('gemini-1.5-flash')
     try:
         response = model.generate_content(prompt, request_options={"timeout": 15.0})
         return response.text.strip()
@@ -558,7 +558,7 @@ def conversar_prospecto_ia(mensaje_nuevo, link_tienda=None, whatsapp=None, idiom
     genai.configure(api_key=api_key)
     
     # Usar el modelo Flash que soporta Audio, Imágenes y Texto rápidamente
-    model = genai.GenerativeModel('gemini-2.5-flash')
+    model = genai.GenerativeModel('gemini-1.5-flash')
     
     try:
         contents = [prompt]
@@ -635,7 +635,7 @@ async def cruzar_y_generar_estrategia(texto_backoffice, phone_contacts):
 
         import google.generativeai as genai
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         prompt = (
             "Eres un experto en Network Marketing y Data Mining.\\n"
@@ -662,7 +662,7 @@ def analizar_texto_estrategia(texto_backoffice):
 
         import google.generativeai as genai
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         prompt = (
             "Eres el Director Estratégico de un afiliado de Gano Excel / Gano iTouch.\\n"
@@ -693,7 +693,7 @@ def analizar_kpi_y_estrategia(imagen_bytes):
         genai.configure(api_key=api_key)
         
         # Configurar modelo con capacidades de visión
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         prompt = (
             "Eres un experto en Redes de Mercadeo y el Director Estratégico de un afiliado de Gano Excel / Gano iTouch.\\n"

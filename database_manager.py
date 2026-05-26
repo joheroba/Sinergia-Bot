@@ -30,6 +30,16 @@ def init_db():
             creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS preferencias_contactos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            afiliado_id INTEGER NOT NULL,
+            nombre_contacto TEXT NOT NULL,
+            accion TEXT NOT NULL,
+            actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(afiliado_id, nombre_contacto)
+        )
+    ''')
     conn.commit()
     conn.close()
     print(f"[DB] Base de datos {DB_FILE} inicializada correctamente.")
@@ -147,6 +157,29 @@ def marcar_orden_completada(orden_id, estado='COMPLETADO'):
     cursor.execute('''
         UPDATE ordenes_bot SET estado = ? WHERE id = ?
     ''', (estado, orden_id))
+    conn.commit()
+    conn.close()
+
+def obtener_preferencia_contacto(afiliado_id, nombre_contacto):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT accion FROM preferencias_contactos 
+        WHERE afiliado_id = ? AND nombre_contacto = ?
+    ''', (afiliado_id, nombre_contacto))
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else None
+
+def actualizar_preferencia_contacto(afiliado_id, nombre_contacto, accion):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO preferencias_contactos (afiliado_id, nombre_contacto, accion)
+        VALUES (?, ?, ?)
+        ON CONFLICT(afiliado_id, nombre_contacto) 
+        DO UPDATE SET accion=excluded.accion, actualizado_en=CURRENT_TIMESTAMP
+    ''', (afiliado_id, nombre_contacto, accion))
     conn.commit()
     conn.close()
 
