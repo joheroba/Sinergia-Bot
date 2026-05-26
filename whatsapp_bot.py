@@ -161,7 +161,20 @@ async def atender_afiliado(p, afiliado):
                         
                         import telegram_manager
                         import os
+                        import json
+                        
                         chat_id = os.getenv("TELEGRAM_CHAT_ID")
+                        current_wp = os.getenv("WHATSAPP_PHONE", "").replace("+", "").replace(" ", "")
+                        try:
+                            with open("afiliados.json", "r", encoding="utf-8") as f:
+                                data_afiliados = json.load(f)
+                                for tid, data_perf in data_afiliados.items():
+                                    if data_perf.get("whatsapp") == current_wp:
+                                        chat_id = tid
+                                        break
+                        except Exception:
+                            pass
+                            
                         msg = f"💬 <b>NUEVO CHAT DETECTADO</b>\nTienes un mensaje no leído de: <code>{nombre_chat}</code>\n¿Qué deseas que haga Sinergia Bot con este chat?"
                         markup = {
                             "inline_keyboard": [
