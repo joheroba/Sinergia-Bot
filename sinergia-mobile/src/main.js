@@ -120,6 +120,45 @@ document.querySelector('#app').innerHTML = `
         <i data-lucide="users" style="color: #3b82f6;"></i>
         <span>Cruzar Datos y Prospectar</span>
       </div>
+      <div class="feature-btn" id="btn-voice-coach" style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.4); box-shadow: 0 0 15px rgba(168,85,247,0.2);">
+        <i data-lucide="mic" style="color: #a855f7;"></i>
+        <span style="font-weight: 700;">Sinergia Voice Coach</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Voice Coach Screen -->
+  <div id="screen-coach" class="screen" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #0c0806 0%, #1c110b 100%); z-index: 2000; overflow: hidden; flex-direction: column;">
+    <div style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(212, 175, 55, 0.1);">
+      <div style="display: flex; align-items: center; gap: 0.8rem;">
+        <div style="width: 40px; height: 40px; border-radius: 50%; background: #a855f7; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(168,85,247,0.4);">
+          <i data-lucide="bot" style="color: white;"></i>
+        </div>
+        <div>
+          <h3 style="color: white; margin: 0; font-size: 1.1rem;">Sinergia Coach</h3>
+          <p style="color: #a855f7; margin: 0; font-size: 0.8rem; font-weight: 600;" id="coach-status">En línea</p>
+        </div>
+      </div>
+      <div id="btn-close-coach" style="cursor: pointer; color: var(--text-muted); padding: 0.5rem;"><i data-lucide="x"></i></div>
+    </div>
+    
+    <div id="coach-chat-area" style="flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;">
+      <div class="glass-card" style="align-self: flex-start; max-w: 85%; padding: 1rem; border-left: 3px solid #a855f7;">
+        <p style="margin:0; font-size: 0.9rem; color: #e2e8f0;">Hola Líder, soy tu Coach de IA. Presiona el micrófono para hablarme, o desliza hacia arriba para iniciar la Escucha Activa durante tus presentaciones.</p>
+      </div>
+    </div>
+    
+    <div style="padding: 2rem; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(255,255,255,0.05); position: relative;">
+      <div id="coach-mic-pulse" style="position: absolute; width: 80px; height: 80px; border-radius: 50%; background: #a855f7; opacity: 0; pointer-events: none; transition: all 0.2s ease;"></div>
+      
+      <button id="btn-coach-mic" style="width: 70px; height: 70px; border-radius: 50%; border: none; background: linear-gradient(135deg, #9333ea 0%, #a855f7 100%); color: white; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(168,85,247,0.5); z-index: 10; position: relative;">
+        <i data-lucide="mic" style="width: 30px; height: 30px;"></i>
+      </button>
+      
+      <p style="margin-top: 1.5rem; color: var(--text-muted); font-size: 0.8rem; text-align: center;" id="coach-instruction">
+        Mantén presionado para Walkie-Talkie<br>
+        <span style="color: #a855f7;">Desliza hacia arriba para Escucha Activa 👆</span>
+      </p>
     </div>
   </div>
 
@@ -843,3 +882,176 @@ document.getElementById('btn-enviar-orden').addEventListener('click', async () =
     setLoading(btn, false);
   }
 });
+
+// === Voice Coach Logic ===
+const btnVoiceCoach = document.getElementById('btn-voice-coach');
+const screenCoach = document.getElementById('screen-coach');
+const btnCloseCoach = document.getElementById('btn-close-coach');
+const btnCoachMic = document.getElementById('btn-coach-mic');
+const coachMicPulse = document.getElementById('coach-mic-pulse');
+const coachChatArea = document.getElementById('coach-chat-area');
+const coachStatus = document.getElementById('coach-status');
+
+let recognition;
+let isRecording = false;
+let isContinuous = false;
+let transcriptBuffer = "";
+
+if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.lang = 'es-ES';
+  recognition.interimResults = true;
+  
+  recognition.onresult = (event) => {
+    let finalTranscript = '';
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript;
+      }
+    }
+    if (finalTranscript) {
+      transcriptBuffer += finalTranscript + " ";
+      if(isContinuous) {
+        coachStatus.innerText = "Escucha Activa: " + transcriptBuffer.substring(0, 30) + "...";
+      }
+    }
+  };
+
+  recognition.onerror = (e) => { console.error("Speech error", e); };
+  recognition.onend = () => {
+    if(isContinuous && isRecording) {
+      // Keep listening if continuous
+      recognition.start();
+    } else if (!isContinuous && transcriptBuffer.trim().length > 0) {
+      // Send Walkie Talkie
+      sendToCoachAPI(transcriptBuffer, 'walkie_talkie');
+    }
+  };
+}
+
+btnVoiceCoach?.addEventListener('click', () => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  screenCoach.style.display = 'flex';
+  setTimeout(() => screenCoach.classList.add('active'), 50);
+});
+
+btnCloseCoach?.addEventListener('click', () => {
+  if(isRecording) stopRecording();
+  screenCoach.classList.remove('active');
+  setTimeout(() => screenCoach.style.display = 'none', 300);
+});
+
+// Touch controls for Mic (Walkie-Talkie vs Escucha Activa)
+let touchStartY = 0;
+btnCoachMic?.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if(!recognition) return showToast("Tu navegador no soporta Reconocimiento de Voz", true);
+  
+  if(isContinuous && isRecording) {
+    // If it was in active listening, stop it
+    stopRecording();
+    sendToCoachAPI(transcriptBuffer, 'escucha_activa');
+    return;
+  }
+  
+  touchStartY = e.touches[0].clientY;
+  transcriptBuffer = "";
+  isContinuous = false;
+  isRecording = true;
+  coachMicPulse.style.opacity = '1';
+  coachMicPulse.style.transform = 'scale(1.5)';
+  coachStatus.innerText = "Escuchando...";
+  btnCoachMic.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+  recognition.start();
+});
+
+btnCoachMic?.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if(!isRecording || isContinuous) return;
+  const currentY = e.touches[0].clientY;
+  if (touchStartY - currentY > 50) { // Swiped up 50px
+    isContinuous = true;
+    coachStatus.innerText = "Modo Escucha Activa Activado";
+    coachStatus.style.color = "#10b981";
+    btnCoachMic.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+    coachMicPulse.style.background = '#10b981';
+    showToast("Escucha Activa: Toca para detener y analizar.");
+  }
+});
+
+btnCoachMic?.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  if(!isRecording) return;
+  
+  if(!isContinuous) {
+    // Walkie Talkie released
+    stopRecording();
+  }
+});
+
+function stopRecording() {
+  isRecording = false;
+  coachMicPulse.style.opacity = '0';
+  coachMicPulse.style.transform = 'scale(1)';
+  btnCoachMic.style.background = 'linear-gradient(135deg, #9333ea 0%, #a855f7 100%)';
+  coachMicPulse.style.background = '#a855f7';
+  coachStatus.innerText = "Procesando...";
+  coachStatus.style.color = "#a855f7";
+  if(recognition) recognition.stop();
+}
+
+function addCoachMessage(text, isUser = false) {
+  const msgDiv = document.createElement('div');
+  msgDiv.className = "glass-card";
+  msgDiv.style.padding = "1rem";
+  msgDiv.style.maxWidth = "85%";
+  
+  if(isUser) {
+    msgDiv.style.alignSelf = "flex-end";
+    msgDiv.style.borderRight = "3px solid #3b82f6";
+    msgDiv.innerHTML = `<p style="margin:0; font-size: 0.85rem; color: #cbd5e1; font-style: italic;">"${text}"</p>`;
+  } else {
+    msgDiv.style.alignSelf = "flex-start";
+    msgDiv.style.borderLeft = "3px solid #a855f7";
+    // Convert newlines to HTML br
+    msgDiv.innerHTML = `<p style="margin:0; font-size: 0.9rem; color: #e2e8f0;">${text.replace(/\\n/g, '<br>')}</p>`;
+  }
+  coachChatArea.appendChild(msgDiv);
+  coachChatArea.scrollTop = coachChatArea.scrollHeight;
+}
+
+async function sendToCoachAPI(text, modo) {
+  if(!text.trim()) {
+    coachStatus.innerText = "En línea";
+    return;
+  }
+  
+  addCoachMessage(text, true);
+  
+  try {
+    const response = await fetch(`${API_BASE}/coach`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: window.currentUserToken,
+        modo: modo,
+        texto: text
+      })
+    });
+    
+    const data = await response.json();
+    if(data.success) {
+      addCoachMessage(data.texto, false);
+      if(data.audio_b64) {
+        const audio = new Audio("data:audio/mp3;base64," + data.audio_b64);
+        audio.play().catch(e => console.error("Auto-play prevented", e));
+      }
+    } else {
+      addCoachMessage("Error del servidor: " + data.message, false);
+    }
+  } catch(err) {
+    addCoachMessage("Error de conexión con SinergiaBot.", false);
+  }
+  coachStatus.innerText = "En línea";
+}

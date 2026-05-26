@@ -720,6 +720,75 @@ def analizar_kpi_y_estrategia(imagen_bytes):
         print(f"Error al analizar KPI con IA: {e}")
         return f"Hubo un error al analizar la imagen de tu Backoffice: {e}"
 
+def generar_respuesta_coach(mensaje, afiliado=None):
+    """
+    Actúa como un mentor y coach de network marketing para responder dudas rápidas del distribuidor (Modo Walkie-Talkie).
+    """
+    nombre_lider = afiliado.get("nombre", "Líder") if afiliado else "Líder"
+    
+    prompt = f"""Eres el 'Sinergia Voice Coach', un mentor experto en Network Marketing y ventas directas de Gano iTouch (Gano Excel).
+Tu objetivo es asesorar, motivar y dar estrategias tácticas al distribuidor {nombre_lider}.
+Él/ella te ha enviado el siguiente mensaje de voz/texto:
+"{mensaje}"
+
+TUS INSTRUCCIONES:
+1. Responde de forma directa, conversacional y motivadora, como si estuvieras hablando en un audio de WhatsApp.
+2. Dale un consejo práctico, exacto y aplicable inmediatamente para Gano iTouch (aplica "Los 4 Pilares": Producto, Compañía, Plan de Pagos, Sistema).
+3. Usa un tono enérgico pero profesional.
+4. NUNCA uses viñetas ni asteriscos de formato markdown, ya que tu respuesta será leída por un sintetizador de voz (TTS). Escribe en prosa fluida.
+5. Mantén la respuesta por debajo de las 80 palabras para que el audio no sea demasiado largo.
+"""
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash', safety_settings={
+            "HARM_CATEGORY_HARASSMENT": "BLOCK_NONE",
+            "HARM_CATEGORY_HATE_SPEECH": "BLOCK_NONE",
+            "HARM_CATEGORY_SEXUALLY_EXPLICIT": "BLOCK_NONE",
+            "HARM_CATEGORY_DANGEROUS_CONTENT": "BLOCK_NONE",
+        })
+        response = model.generate_content(prompt)
+        return response.text.replace("*", "").strip()
+    except Exception as e:
+        print(f"Error en generar_respuesta_coach: {e}")
+        return "Hubo un error de conexión con la IA. Por favor, intenta de nuevo."
+
+def analizar_escucha_activa(transcripcion, afiliado=None):
+    """
+    Analiza una conversación completa entre el distribuidor y el cliente (Modo Espía/Conversacional).
+    Extrae dolores, perfil y la frase exacta para cerrar la venta.
+    """
+    nombre_lider = afiliado.get("nombre", "Líder") if afiliado else "Líder"
+    
+    prompt = f"""Eres el 'Analista Táctico de Cierres' de Gano iTouch.
+El distribuidor {nombre_lider} ha dejado su micrófono abierto grabando su conversación (presencial o llamada) con un cliente o afiliado potencial.
+A continuación tienes la transcripción de la charla:
+
+TRANSCRIPCIÓN:
+"{transcripcion}"
+
+TUS INSTRUCCIONES:
+Basado en lo que escuchaste, haz un análisis de "Escucha Activa" y genera la siguiente estructura para que el distribuidor la lea en su celular (o se la dicte el TTS):
+
+Perfil de la Persona: (ej. Analítico, Emocional, Escéptico, Orientado a la Salud, Buscador de Negocio)
+Puntos de Dolor (Necesidades): (ej. Falta de dinero, falta de tiempo, problemas gástricos, estrés)
+Nivel de Interés: (Alto, Medio, Bajo)
+Estrategia Sugerida: (Un párrafo corto sobre cómo abordar el cierre basado en sus dolores. Si es un nuevo prospecto, abórdalo siempre desde el punto de vista de qué producto específico necesita comprar por salud o su posible paquete de afiliación por negocio).
+Frase de Cierre Exacta: (Escribe textualmente la frase persuasiva que el distribuidor debe decirle AHORA MISMO para cerrar la venta o el compromiso, usando neuroventas).
+
+Escribe de forma clara. NUNCA uses asteriscos (*) de markdown. Si el texto no tiene sentido o es puro ruido, indica que no se captó bien la conversación.
+"""
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash', safety_settings={
+            "HARM_CATEGORY_HARASSMENT": "BLOCK_NONE",
+            "HARM_CATEGORY_HATE_SPEECH": "BLOCK_NONE",
+            "HARM_CATEGORY_SEXUALLY_EXPLICIT": "BLOCK_NONE",
+            "HARM_CATEGORY_DANGEROUS_CONTENT": "BLOCK_NONE",
+        })
+        response = model.generate_content(prompt)
+        return response.text.replace("*", "").strip()
+    except Exception as e:
+        print(f"Error en analizar_escucha_activa: {e}")
+        return "Hubo un error analizando la conversación. Intenta acercar el micrófono la próxima vez."
+
 if __name__ == "__main__":
     # Prueba rápida con codificación de consola segura
     import sys

@@ -8,6 +8,9 @@ from dotenv import load_dotenv
 import telegram_manager
 import publisher
 import notifications
+import ai_agent
+import base64
+import time
 
 load_dotenv()
 
@@ -312,6 +315,62 @@ async def cruzar_prospectos(request):
         
     except Exception as e:
         return add_cors_headers(web.json_response({"status": "error", "message": str(e)}))
+
+@routes.post('/api/coach')
+async def coach_handler(request):
+    try:
+        data = await request.json()
+        token = data.get("token")
+        modo = data.get("modo", "walkie_talkie")
+        texto = data.get("texto", "")
+        
+        # Validar token
+        afiliados = telegram_manager.cargar_afiliados()
+        admin_chat_id = os.getenv("TELEGRAM_CHAT_ID")
+        
+        perfil = None
+        if token == admin_chat_id:
+            perfil = {"nombre": "Administrador", "rol": "admin"}
+        else:
+            for chat_id, data_perfil in afiliados.items():
+                if token == chat_id or token == data_perfil.get("whatsapp"):
+                    perfil = data_perfil
+                    perfil["chat_id"] = chat_id
+                    break
+        
+        if not perfil:
+            return add_cors_headers(web.json_response({"success": False, "message": "Token inválido"}, status=401))
+
+        # Generar texto de respuesta
+        if modo == "escucha_activa":
+            respuesta_texto = ai_agent.analizar_escucha_activa(texto, perfil)
+        else:
+            respuesta_texto = ai_agent.generar_respuesta_coach(texto, perfil)
+            
+        # Generar audio con edge-tts
+        audio_b64 = ""
+        timestamp = int(time.time())
+        audio_path = f"coach_{timestamp}.mp3"
+        try:
+            # Usar voz neural realista
+            comando_tts = f'edge-tts --text "{respuesta_texto}" --write-media {audio_path} --voice es-MX-JorgeNeural'
+            os.system(comando_tts)
+            
+            if os.path.exists(audio_path):
+                with open(audio_path, "rb") as audio_file:
+                    audio_b64 = base64.b64encode(audio_file.read()).decode('utf-8')
+                os.remove(audio_path) # Limpiar el archivo
+        except Exception as e:
+            print(f">> [Sinergia Mobile API] Error generando audio TTS: {e}")
+
+        return add_cors_headers(web.json_response({
+            "success": True, 
+            "texto": respuesta_texto,
+            "audio_b64": audio_b64
+        }))
+            
+    except Exception as e:
+        return add_cors_headers(web.json_response({"success": False, "message": str(e)}, status=500))
 
 async def start_api_server():
     app = web.Application(client_max_size=1024**2 * 50) # 50 MB to allow large phone contact lists
