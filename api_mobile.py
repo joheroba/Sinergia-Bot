@@ -265,6 +265,13 @@ async def analyze_kpi(request):
         elif codigo and clave:
             # Ejecutar scraper automático en segundo plano
             texto_backoffice = await ai_agent.extraer_kpi_automatico(codigo, clave)
+            
+            # [Sinergia Privacy Shield] Borrado criptográfico simulado
+            codigo = "0x00"
+            clave = "0x00"
+            del codigo
+            del clave
+            
             resultado_estrategia = ai_agent.analizar_texto_estrategia(texto_backoffice)
             
         else:

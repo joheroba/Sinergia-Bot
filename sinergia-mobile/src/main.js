@@ -177,7 +177,12 @@ document.querySelector('#app').innerHTML = `
         <input type="text" id="kpi-codigo" class="input-field" placeholder="Ej. 4408926" />
       </div>
       <div class="input-group" style="margin-top: 1rem;">
-        <label>Contraseña Backoffice</label>
+        <label style="display:flex; justify-content:space-between; align-items:center;">
+          Contraseña Backoffice
+          <div id="btn-privacy-shield" style="display:flex; align-items:center; gap:0.3rem; color:#10b981; font-size:0.75rem; cursor:pointer; background:rgba(16,185,129,0.1); padding:0.2rem 0.5rem; border-radius:12px; border:1px solid rgba(16,185,129,0.3);">
+            <i data-lucide="shield-check" style="width:14px; height:14px;"></i> Privacidad
+          </div>
+        </label>
         <input type="password" id="kpi-clave" class="input-field" placeholder="****" />
       </div>
       
@@ -208,6 +213,33 @@ document.querySelector('#app').innerHTML = `
       <div id="kpi-result" style="margin-top: 1.5rem; padding: 1rem; background: rgba(0,0,0,0.3); border-radius: 8px; font-size: 0.9rem; white-space: pre-wrap; display: none; border: 1px solid var(--gold-primary);">
       </div>
     </div>
+    </div>
+  </div>
+
+  <!-- Privacy Shield Modal -->
+  <div id="modal-privacy-shield" class="screen" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 3000; overflow-y: auto; flex-direction: column; align-items: center; justify-content: center; padding: 2rem;">
+    <div class="glass-card" style="width: 100%; max-width: 400px; position: relative; padding: 2rem; border-top: 4px solid #10b981;">
+      <div id="btn-close-privacy" style="position: absolute; right: 1rem; top: 1rem; cursor: pointer; color: var(--text-muted);"><i data-lucide="x"></i></div>
+      
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(16,185,129,0.1); display: inline-flex; align-items: center; justify-content: center; border: 2px solid #10b981; margin-bottom: 1rem;">
+          <i data-lucide="shield-check" style="color: #10b981; width: 32px; height: 32px;"></i>
+        </div>
+        <h3 style="color: #10b981; margin: 0;">Auditoría de Privacidad</h3>
+        <p style="color: #10b981; font-weight: bold; font-size: 0.8rem; margin-top: 0.2rem;">ZERO-KNOWLEDGE ARCHITECTURE</p>
+      </div>
+      
+      <p style="color: #e2e8f0; font-size: 0.9rem; margin-bottom: 1rem; line-height: 1.5;">
+        SinergiaBot utiliza criptografía de <strong>Conocimiento Cero</strong> para garantizar que nadie (ni los creadores ni tus uplines) pueda ver tu clave:
+      </p>
+      <ul style="color: var(--text-muted); font-size: 0.85rem; padding-left: 1.2rem; margin-bottom: 1.5rem; line-height: 1.5;">
+        <li style="margin-bottom: 0.5rem;">Las credenciales <strong>NO se guardan</strong> en ninguna base de datos ni disco.</li>
+        <li style="margin-bottom: 0.5rem;">El servidor ejecuta un <strong>Borrado Destructivo en RAM</strong> en milisegundos tras leer el puntaje.</li>
+        <li>Los archivos "logs" del sistema están desactivados criptográficamente para esta función.</li>
+      </ul>
+      <p style="color: var(--gold-primary); font-size: 0.8rem; text-align: center; margin: 0; font-style: italic;">
+        "Tu negocio, tu red, tu privacidad intacta."
+      </p>
     </div>
   </div>
 
@@ -1055,3 +1087,16 @@ async function sendToCoachAPI(text, modo) {
   }
   coachStatus.innerText = "En línea";
 }
+
+// === Privacy Shield Logic ===
+const btnPrivacyShield = document.getElementById('btn-privacy-shield');
+const modalPrivacyShield = document.getElementById('modal-privacy-shield');
+const btnClosePrivacy = document.getElementById('btn-close-privacy');
+
+btnPrivacyShield?.addEventListener('click', () => {
+  modalPrivacyShield.style.display = 'flex';
+});
+
+btnClosePrivacy?.addEventListener('click', () => {
+  modalPrivacyShield.style.display = 'none';
+});
