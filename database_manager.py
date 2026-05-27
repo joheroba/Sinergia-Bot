@@ -183,6 +183,17 @@ def actualizar_preferencia_contacto(afiliado_id, nombre_contacto, accion):
     conn.commit()
     conn.close()
 
+def obtener_contactos_pendientes(afiliado_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT nombre_contacto FROM preferencias_contactos 
+        WHERE afiliado_id = ? AND accion = 'PENDIENTE'
+    ''', (afiliado_id,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [row[0] for row in rows]
+
 if __name__ == "__main__":
     init_db()
     # Crear el usuario administrador por defecto (Tú)

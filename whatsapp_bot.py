@@ -156,8 +156,11 @@ async def atender_afiliado(p, afiliado):
                         continue # Lo dejamos sin leer hasta que el usuario decida en Telegram
                         
                     elif preferencia is None:
-                        print(f"[{nombre_lider}] => Nuevo contacto detectado '{nombre_chat}'. Solicitando permiso por Telegram.")
-                        database_manager.actualizar_preferencia_contacto(1, nombre_chat, 'PENDIENTE')
+                        print(f"[{nombre_lider}] => Nuevo contacto detectado '{nombre_chat}'. Solicitando permiso por Telegram y APK.")
+                        current_wp = os.getenv("WHATSAPP_PHONE", "").replace("+", "").replace(" ", "")
+                        af_data = database_manager.obtener_afiliado(current_wp)
+                        af_id = af_data["id"] if af_data else 1
+                        database_manager.actualizar_preferencia_contacto(af_id, nombre_chat, 'PENDIENTE')
                         
                         import telegram_manager
                         import os

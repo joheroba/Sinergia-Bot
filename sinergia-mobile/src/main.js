@@ -125,6 +125,19 @@ document.querySelector('#app').innerHTML = `
         <span style="font-weight: 700;">Sinergia Voice Coach</span>
       </div>
     </div>
+    <p style="font-size: 0.75rem; color: rgba(255,255,255,0.3); text-align: center; margin-top: 1.5rem; margin-bottom: 2rem;">v1.2.5 (SaaS Ready)</p>
+  </div>
+
+  <!-- Pending Approvals Modal -->
+  <div id="modal-pendientes" class="screen" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 3000; align-items: center; justify-content: center;">
+    <div style="background: #1c110b; border: 1px solid var(--gold-primary); border-radius: 12px; padding: 1.5rem; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 1rem;">
+      <h3 style="color: white; margin: 0; text-align: center;">💬 Nuevo Prospecto en WhatsApp</h3>
+      <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; margin: 0;">SinergiaBot detectó a: <br><strong id="pendiente-nombre" style="color: white; font-size: 1.1rem;">Cargando...</strong></p>
+      <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+        <button id="btn-pendiente-contestar" class="btn-primary" style="flex: 1; padding: 0.8rem; font-size: 0.9rem; justify-content: center;">🤖 Contestar</button>
+        <button id="btn-pendiente-ignorar" class="btn-outline" style="flex: 1; padding: 0.8rem; font-size: 0.9rem; justify-content: center; border-color: #ef4444; color: #ef4444;">🚫 Ignorar</button>
+      </div>
+    </div>
   </div>
 
   <!-- Voice Coach Screen -->
@@ -700,8 +713,60 @@ function setupDashboard(user, token) {
   statusBadge.innerHTML = '<i data-lucide="wifi"></i> En línea';
   lucide.createIcons();
   
+  if (window.pendingInterval) clearInterval(window.pendingInterval);
+  window.pendingInterval = setInterval(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/contactos_pendientes`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ token: token })
+      });
+      const data = await res.json();
+      if(data.success && data.pendientes && data.pendientes.length > 0) {
+        window.currentPendingContact = data.pendientes[0];
+        document.getElementById('pendiente-nombre').textContent = window.currentPendingContact;
+        document.getElementById('modal-pendientes').style.display = 'flex';
+      }
+    } catch(e) {}
+  }, 10000); // Check every 10 seconds
+  
   window.currentUserToken = token;
   window.currentUserId = user.id || 1;
+}
+
+// Modal Pending Contacts Handlers
+document.getElementById('btn-pendiente-contestar').addEventListener('click', async () => {
+  await resolverPendiente('CONTESTAR');
+});
+document.getElementById('btn-pendiente-ignorar').addEventListener('click', async () => {
+  await resolverPendiente('IGNORAR');
+});
+
+async function resolverPendiente(accion) {
+  if(!window.currentPendingContact) return;
+  try {
+    const btnCtx = document.getElementById(accion === 'CONTESTAR' ? 'btn-pendiente-contestar' : 'btn-pendiente-ignorar');
+    const originalText = btnCtx.textContent;
+    btnCtx.textContent = 'Guardando...';
+    const res = await fetch(`${API_BASE}/resolver_contacto`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        token: window.currentUserToken,
+        nombre_contacto: window.currentPendingContact,
+        accion: accion
+      })
+    });
+    const data = await res.json();
+    btnCtx.textContent = originalText;
+    if(data.success) {
+      showToast(accion === 'CONTESTAR' ? '✅ IA activada para este contacto' : '🚫 Contacto añadido a lista negra');
+      document.getElementById('modal-pendientes').style.display = 'none';
+      window.currentPendingContact = null;
+    } else {
+      showToast(data.message, true);
+    }
+  } catch(e) {}
 }
 
 btnLogin.addEventListener('click', async () => {

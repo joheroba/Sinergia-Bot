@@ -323,6 +323,54 @@ async def cruzar_prospectos(request):
     except Exception as e:
         return add_cors_headers(web.json_response({"status": "error", "message": str(e)}))
 
+@routes.post('/api/contactos_pendientes')
+async def contactos_pendientes(request):
+    try:
+        data = await request.json()
+        token = data.get("token")
+        if not token:
+            return add_cors_headers(web.json_response({"success": False, "message": "Token requerido"}, status=401))
+            
+        afiliado = database_manager.obtener_afiliado(token)
+        if not afiliado:
+            return add_cors_headers(web.json_response({"success": True, "pendientes": []}))
+            
+        pendientes = database_manager.obtener_contactos_pendientes(afiliado["id"])
+        return add_cors_headers(web.json_response({
+            "success": True,
+            "pendientes": pendientes
+        }))
+    except Exception as e:
+        return add_cors_headers(web.json_response({"success": False, "message": str(e)}, status=500))
+
+@routes.post('/api/resolver_contacto')
+async def resolver_contacto(request):
+    try:
+        data = await request.json()
+        token = data.get("token")
+        nombre_contacto = data.get("nombre_contacto")
+        accion = data.get("accion") # 'CONTESTAR' o 'IGNORAR'
+        
+        if not token or not nombre_contacto or not accion:
+            return add_cors_headers(web.json_response({"success": False, "message": "Faltan datos"}, status=400))
+            
+        afiliado = database_manager.obtener_afiliado(token)
+        if not afiliado:
+            return add_cors_headers(web.json_response({"success": False, "message": "Afiliado no encontrado"}, status=404))
+            
+        database_manager.actualizar_preferencia_contacto(afiliado["id"], nombre_contacto, accion)
+        
+        # Enviar aviso por Telegram si es administrador (para mantener bitácora central)
+        if os.getenv("TELEGRAM_CHAT_ID"):
+            await telegram_manager.notifications.enviar_alerta(
+                f"✅ Vía APK: El contacto <code>{nombre_contacto}</code> ha sido marcado como <b>{accion}</b>.",
+                chat_id=os.getenv("TELEGRAM_CHAT_ID")
+            )
+            
+        return add_cors_headers(web.json_response({"success": True, "message": "Preferencia guardada"}))
+    except Exception as e:
+        return add_cors_headers(web.json_response({"success": False, "message": str(e)}, status=500))
+
 @routes.post('/api/coach')
 async def coach_handler(request):
     try:
