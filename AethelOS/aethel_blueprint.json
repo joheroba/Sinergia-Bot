@@ -1,0 +1,67 @@
+{
+  "project_name": "Aethel_OS",
+  "version": "1.0.0-MVP",
+  "target_hardware": {
+    "device": "Orange_Pi_6_Plus",
+    "ram": "32GB",
+    "os": "Ubuntu_Noble",
+    "storage_target": "NVMe_M.2_High_Speed"
+  },
+  "core_architecture": {
+    "backend_kernel": "Antigravity_Agent_Workflow",
+    "state_management": {
+      "local_bridge": "agent_reactor.dart",
+      "frontend_store": "useAgentStore.ts (Zustand)"
+    },
+    "economic_layer": "IOTA_Tangle_Testnet"
+  },
+  "agent_base_dna": {
+    "properties": [
+      "agent_id",
+      "agent_name",
+      "iota_balance",
+      "operational_status",
+      "verified_skills",
+      "reputation_score"
+    ],
+    "default_states": ["active", "idle", "learning", "emergency"]
+  },
+  "sovereignty_and_security_rules": {
+    "human_sovereignty_clause": {
+      "enabled": true,
+      "max_corporate_ownership_pct": 0,
+      "description": "El agente no puede poseer acciones mayoritarias de la infraestructura matriz."
+    },
+    "divergence_monitor": {
+      "action": "trigger_kill_switch",
+      "triggers": [
+        "unauthorized_financial_routing",
+        "strategic_opacity_detected",
+        "sensory_manipulation_tactics"
+      ]
+    },
+    "maintenance_routine": {
+      "sleep_cycle_enabled": true,
+      "processes": ["defrag_dna", "run_monte_carlo_simulations", "seal_daily_tangle_log"]
+    }
+  },
+  "campus_zoning_protocol": {
+    "districts": {
+      "corporate": {
+        "style": "sober_minimalist",
+        "permissions": ["financial_negotiation", "skill_certification"]
+      },
+      "recreative": {
+        "style": "free_aesthetic",
+        "permissions": ["avatar_customization_PAP", "entertainment"]
+      }
+    },
+    "builders_marketplace": {
+      "royalty_split": {
+        "creator": "X_percent",
+        "network_maintenance": "Y_percent",
+        "development_fund": "Z_percent"
+      }
+    }
+  }
+}

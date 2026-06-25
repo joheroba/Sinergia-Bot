@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Joheroba Import",
+    "slug": "joheroba-import-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0f172a",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.joherobaimport.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#0f172a",
+        "foregroundImage": "./assets/icon.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
