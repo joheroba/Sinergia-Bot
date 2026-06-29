@@ -129,23 +129,12 @@ export default function App() {
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
         <StatusBar style="light" backgroundColor="#0f172a" />
-        <WebView
-          ref={webViewRef}
-          source={{ uri: 'https://joherobaimport.com' }}
-          style={styles.webview}
-          userAgent="Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Mobile Safari/537.36"
-          allowsBackForwardNavigationGestures={true}
-          onNavigationStateChange={(navState) => {
-            setCanGoBack(navState.canGoBack);
-          }}
-          startInLoadingState={true}
-          injectedJavaScript={injectedJavascript}
-          renderLoading={() => (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#3b82f6" />
-            </View>
-          )}
-        />
+        <View style={styles.welcomeContainer}>
+          <Ionicons name="rocket-outline" size={80} color="#8b5cf6" />
+          <Text style={styles.welcomeTitle}>SinergiaBot</Text>
+          <Text style={styles.welcomeSubtitle}>Tu mentor potenciado con IA para Gano iTouch</Text>
+          <Text style={styles.welcomeFooter}>Toca el botón flotante para comenzar el chat</Text>
+        </View>
         
         {/* Floating Action Button for GanoiBot */}
         {!isChatOpen && (
@@ -201,7 +190,10 @@ export default function App() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
-  webview: { flex: 1 },
+  welcomeContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  welcomeTitle: { color: '#fff', fontSize: 32, fontWeight: 'bold', marginTop: 20 },
+  welcomeSubtitle: { color: '#94a3b8', fontSize: 18, textAlign: 'center', marginTop: 10, marginBottom: 40 },
+  welcomeFooter: { color: '#475569', fontSize: 14, textAlign: 'center', position: 'absolute', bottom: 100 },
   loadingContainer: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' },
   fab: {
     position: 'absolute',
