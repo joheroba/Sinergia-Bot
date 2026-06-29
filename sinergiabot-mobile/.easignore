@@ -1,0 +1,37 @@
+# Ignore large build artifacts and accidental downloads
+*.tar.gz
+*.dll
+*.exe
+*.zip
+*.onnx
+*.json.onnx
+
+# Dependencies
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# macOS
+.DS_Store
+*.pem
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
