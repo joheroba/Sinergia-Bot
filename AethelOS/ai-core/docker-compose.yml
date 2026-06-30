@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  ai-core:
+    build: .
+    container_name: aethelos-ai-core
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      # - SUPABASE_URL=${SUPABASE_URL}
+      # - SUPABASE_KEY=${SUPABASE_KEY}
+      # - OPENAI_API_KEY=${OPENAI_API_KEY}
+    env_file:
+      - .env
+    restart: unless-stopped
+    volumes:
+      - ./local_db:/app/local_db
+      - ./voice_model:/app/voice_model
