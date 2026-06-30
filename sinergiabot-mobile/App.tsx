@@ -66,8 +66,8 @@ export default function App() {
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   
-  // IP del VPS
-  const API_URL = "http://45.55.92.211:3000/api/chat";
+  // IP de la PC local (para pruebas)
+  const API_URL = "http://10.183.1.26:3000/api/chat";
 
   useEffect(() => {
     registerForPushNotificationsAsync().then(token => setExpoPushToken(token));
