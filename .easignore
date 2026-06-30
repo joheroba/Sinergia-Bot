@@ -1,0 +1,5 @@
+# Ignore the heavy backend and AI models folder from Expo builds
+AethelOS/
+*.tar.gz
+*.dll
+*.onnx
