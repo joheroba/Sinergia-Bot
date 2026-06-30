@@ -3,15 +3,15 @@
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {
-    "expo": "~56.0.8",
+    "@expo/vector-icons": "^15.0.2",
+    "expo": "~56.0.12",
+    "expo-constants": "~56.0.18",
     "expo-device": "~56.0.4",
-    "expo-notifications": "~56.0.15",
+    "expo-notifications": "~56.0.18",
     "expo-status-bar": "~56.0.4",
     "react": "19.2.3",
     "react-native": "0.85.3",
-    "react-native-safe-area-context": "^5.8.0",
-    "@expo/vector-icons": "^14.1.0",
-    "expo-constants": "*",
+    "react-native-safe-area-context": "~5.7.0",
     "react-native-webview": "^13.16.1"
   },
   "scripts": {
