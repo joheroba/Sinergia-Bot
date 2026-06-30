@@ -20,6 +20,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f0d97437-5cd3-4b32-8e87-5af38c34feea"
+      }
+    },
+    "owner": "joheroba"
   }
 }
