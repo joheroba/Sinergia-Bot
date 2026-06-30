@@ -31,22 +31,47 @@ async function processMessage(agentName, messageHistory, userMessage, imageUrl =
   const policies = await getCompanyPolicies();
   
   const personasPath = path.join(__dirname, 'local_db', 'agent_personas.json');
+  const baseAgentsPath = path.join(__dirname, 'local_db', 'base_agents.json');
+  const projectsPath = path.join(__dirname, 'local_db', 'projects.json');
+  
   let personas = {};
+  let baseAgents = {};
+  let projects = {};
+  
   try {
-    personas = JSON.parse(fs.readFileSync(personasPath, 'utf-8'));
+    if (fs.existsSync(personasPath)) personas = JSON.parse(fs.readFileSync(personasPath, 'utf-8'));
+    if (fs.existsSync(baseAgentsPath)) baseAgents = JSON.parse(fs.readFileSync(baseAgentsPath, 'utf-8'));
+    if (fs.existsSync(projectsPath)) projects = JSON.parse(fs.readFileSync(projectsPath, 'utf-8'));
   } catch (e) {
-    console.error("Error leyendo personas:", e);
+    console.error("Error leyendo bases de datos de agentes/proyectos:", e);
   }
   
-  const roleContext = personas[agentName] || "Eres un agente genérico de Sinergia Pro con capacidad de adaptación.";
+  let roleContext = personas[agentName] || "Eres un agente genérico de Sinergia Pro con capacidad de adaptación.";
+  let systemPrompt = "";
 
-  const systemPrompt = `Eres ${agentName}, un agente de IA corporativo de Sinergia Pro.
+  // Lógica Multi-Tenant (Marca Blanca)
+  if (projects[agentName]) {
+    const projectConfig = projects[agentName];
+    const baseProfile = baseAgents[projectConfig.base_agent] || "Perfil base no encontrado.";
+    
+    systemPrompt = `Eres ${agentName}, ${projectConfig.role_override}.
+[ADN BASE - MARCA BLANCA]: ${baseProfile}
+[CONTEXTO INYECTADO DEL PROYECTO - ${projectConfig.project_name}]: ${projectConfig.injected_knowledge}
+
+Políticas del Sistema Maestro (AethelOS):
+${policies}
+
+Responde siempre en español, de forma profesional, estratégica y directa. Si necesitas datos del mundo exterior, puedes usar las herramientas de Búsqueda Web o de lectura de archivos.`;
+  } else {
+    // Modo Legacy
+    systemPrompt = `Eres ${agentName}, un agente de IA corporativo de Sinergia Pro.
 ${roleContext}
 
 Políticas de la empresa:
 ${policies}
 
-Adáptate al proyecto o producto que el director te indique (por ejemplo, Joheroba Import, o Gano Itouch). Responde siempre en español, de forma profesional, estratégica y directa. Si necesitas datos del mundo exterior, puedes usar las herramientas de Búsqueda Web o de lectura de archivos.`;
+Adáptate al proyecto o producto que el director te indique. Responde siempre en español, de forma profesional, estratégica y directa. Si necesitas datos del mundo exterior, puedes usar las herramientas de Búsqueda Web o de lectura de archivos.`;
+  }
 
   let userContent = userMessage;
   if (imageUrl) {
