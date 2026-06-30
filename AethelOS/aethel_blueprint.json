@@ -9,6 +9,10 @@
   },
   "core_architecture": {
     "backend_kernel": "Antigravity_Agent_Workflow",
+    "deployment_topology": {
+      "cloud_master": "Vercel / VPS Dockerized (AethelOS Multi-Tenant White-Label)",
+      "edge_nodes": "Local PC Affiliates (GanoiBot Instantiations)"
+    },
     "state_management": {
       "local_bridge": "agent_reactor.dart",
       "frontend_store": "useAgentStore.ts (Zustand)"
@@ -22,9 +26,14 @@
       "iota_balance",
       "operational_status",
       "verified_skills",
-      "reputation_score"
+      "reputation_score",
+      "tenant_project_id"
     ],
-    "default_states": ["active", "idle", "learning", "emergency"]
+    "default_states": ["active", "idle", "learning", "emergency"],
+    "white_label_factory": {
+      "enabled": true,
+      "description": "Base agents are brand-agnostic. Specific knowledge (e.g., Gano iTouch) is injected only at the Edge clone level."
+    }
   },
   "sovereignty_and_security_rules": {
     "human_sovereignty_clause": {
