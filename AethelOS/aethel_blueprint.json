@@ -17,7 +17,11 @@
       "local_bridge": "agent_reactor.dart",
       "frontend_store": "useAgentStore.ts (Zustand)"
     },
-    "economic_layer": "IOTA_Tangle_Testnet"
+    "economic_layer": "IOTA_Tangle_Testnet",
+    "3d_generation_capabilities": {
+      "diffusion_to_3d_api": "Planned (Tripo3D/CSM.ai) for automatic 2D to 3D mesh generation",
+      "blender_modular_assembly": "Enabled via Python bpy API (Kitbashing, Merging, Texturing, Ad Generation)"
+    }
   },
   "agent_base_dna": {
     "properties": [
