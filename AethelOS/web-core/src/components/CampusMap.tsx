@@ -1,6 +1,6 @@
 import { Suspense, useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Text, Html, useGLTF, useAnimations, Billboard, RoundedBox, PositionalAudio, VideoTexture } from '@react-three/drei';
+import { OrbitControls, Text, Html, useGLTF, useAnimations, Billboard, RoundedBox, PositionalAudio } from '@react-three/drei';
 import { Physics, RigidBody, CuboidCollider, CapsuleCollider } from '@react-three/rapier';
 import { useAgentStore, AgentDNA } from '@/store/useAgentStore';
 import { useInspectorStore } from '@/store/useInspectorStore';
@@ -235,7 +235,7 @@ function VideoScreen() {
       <mesh>
         <planeGeometry args={[5.8, 3.8]} />
         <meshBasicMaterial toneMapped={false}>
-          <videoTexture attach="map" args={[video]} encoding={THREE.sRGBEncoding} />
+          <videoTexture attach="map" args={[video]} colorSpace={THREE.SRGBColorSpace} />
         </meshBasicMaterial>
       </mesh>
       
