@@ -255,8 +255,7 @@ function VideoScreen() {
          // PositionalAudio carga el audio y lo emite en 3D
          <PositionalAudio
            url="/videos/qis_promo.mp4"
-           distanceModel="linear"
-           ref={(audio) => {
+           ref={(audio: any) => {
              // Sincronizar el audio de PositionalAudio con el video principal para evitar desfaces
              if (audio && !audio.isPlaying) {
                audio.play();
