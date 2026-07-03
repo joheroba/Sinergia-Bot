@@ -1,6 +1,6 @@
 import { Suspense, useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Text, Html, useGLTF, useAnimations, Billboard, RoundedBox } from '@react-three/drei';
+import { OrbitControls, Text, Html, useGLTF, useAnimations, Billboard, RoundedBox, PositionalAudio, VideoTexture } from '@react-three/drei';
 import { Physics, RigidBody, CuboidCollider, CapsuleCollider } from '@react-three/rapier';
 import { useAgentStore, AgentDNA } from '@/store/useAgentStore';
 import { useInspectorStore } from '@/store/useInspectorStore';
@@ -141,23 +141,27 @@ function AgentAvatar({ agent }: { agent: AgentDNA }) {
   let modelPath = null;
   let scale = 0.011;
 
-  if (agent.agent_id === 'A-001') {
-    modelPath = '/paul_talking_business.glb'; // Paul (Humano)
-  } else if (agent.agent_id === 'A-002') {
-    modelPath = '/sophia_animated_003_-_animated_3d_woman.glb'; // Sophia (Humana)
-  } else if (agent.agent_id === 'A-003') {
+  // UUIDs are used now, so we match by name
+  const name = agent.agent_name.toLowerCase();
+
+  if (name.includes('paul')) {
+    modelPath = '/paul_talking_business.glb'; // Paul (Humano antiguo)
+  } else if (name.includes('sophia')) {
+    modelPath = '/models/sophia.glb'; // Sophia (NUEVO MODELO CHARMORPH)
+    scale = 1.0; // CharMorph scale is usually 1.0 meters, not 0.011
+  } else if (name.includes('travis')) {
     modelPath = '/travis_synth.glb'; // Travis (Sintético)
     scale = 0.5; // Escalar el Synth
-  } else if (agent.agent_id === 'A-004') {
+  } else if (name.includes('emma')) {
     modelPath = '/emma_synth.glb'; // Emma (Sintética Rosa)
     scale = 0.5;
-  } else if (agent.agent_id === 'A-005') {
+  } else if (name.includes('marcus')) {
     modelPath = '/marcus_synth.glb'; // Marcus (Sintético Naranja Corpulento)
     scale = 0.5;
-  } else if (agent.agent_id === 'A-006') {
+  } else if (name.includes('elena')) {
     modelPath = '/elena_synth.glb'; // Elena (Sintética Verde)
     scale = 0.5;
-  } else if (agent.agent_name === 'GanoiBot' || agent.agent_id === 'A-808') {
+  } else if (name.includes('ganoibot') || name.includes('808')) {
     modelPath = '/executive_in_a_navy_suit.glb';
     scale = 1.1;
   }
@@ -207,15 +211,73 @@ function AnimatedHumanoid({ agent, modelPath, scale }: { agent: AgentDNA, modelP
   return <primitive object={scene} scale={scale} position={[0, 0, 0]} />; 
 }
 
+function VideoScreen() {
+  const [video] = useState(() => {
+    const vid = document.createElement('video');
+    vid.src = '/videos/qis_promo.mp4';
+    vid.crossOrigin = 'Anonymous';
+    vid.loop = true;
+    vid.muted = true; // Empieza muteado por las políticas del navegador
+    vid.play();
+    return vid;
+  });
+
+  const [soundEnabled, setSoundEnabled] = useState(false);
+
+  useEffect(() => {
+    if (soundEnabled) {
+      video.muted = false;
+    }
+  }, [soundEnabled, video]);
+
+  return (
+    <group position={[0, 0, 0.11]}>
+      <mesh>
+        <planeGeometry args={[5.8, 3.8]} />
+        <meshBasicMaterial toneMapped={false}>
+          <videoTexture attach="map" args={[video]} encoding={THREE.sRGBEncoding} />
+        </meshBasicMaterial>
+      </mesh>
+      
+      {/* Botón de Audio */}
+      <Html position={[0, -0.4, 0.01]} transform scale={0.4}>
+        {!soundEnabled && (
+          <button 
+            onClick={() => setSoundEnabled(true)}
+            className="bg-sky-600/80 hover:bg-sky-500 text-white font-bold py-2 px-4 rounded-full border border-sky-400 backdrop-blur-sm pointer-events-auto shadow-[0_0_10px_rgba(56,189,248,0.5)]"
+          >
+            🔊 Activar Sonido Espacial
+          </button>
+        )}
+      </Html>
+      
+      {soundEnabled && (
+         // PositionalAudio carga el audio y lo emite en 3D
+         <PositionalAudio
+           url="/videos/qis_promo.mp4"
+           distanceModel="linear"
+           ref={(audio) => {
+             // Sincronizar el audio de PositionalAudio con el video principal para evitar desfaces
+             if (audio && !audio.isPlaying) {
+               audio.play();
+             }
+           }}
+           loop
+         />
+      )}
+    </group>
+  );
+}
+
 function AgentMesh({ agent }: { agent: AgentDNA }) {
   const meshRef = useRef<any>(null);
   const [targetVec] = useState(() => new THREE.Vector3());
-  const [currentPos] = useState(() => new THREE.Vector3(agent.position[0], 0, agent.position[2]));
+  const [currentPos] = useState(() => new THREE.Vector3(agent.position[0], -0.98, agent.position[2]));
 
   useFrame((state, delta) => {
     if (meshRef.current && agent.operational_status !== 'emergency') {
       // Lerp hacia la posicion objetivo
-      targetVec.set(agent.target_position[0], 0, agent.target_position[2]);
+      targetVec.set(agent.target_position[0], -0.98, agent.target_position[2]);
       currentPos.lerp(targetVec, 2.0 * delta); // Velocidad de movimiento
       
       meshRef.current.position.copy(currentPos);
@@ -229,7 +291,7 @@ function AgentMesh({ agent }: { agent: AgentDNA }) {
   });
 
   return (
-    <group ref={meshRef} position={[agent.position[0], 0, agent.position[2]]}>
+    <group ref={meshRef} position={[agent.position[0], -0.98, agent.position[2]]}>
       <AgentAvatar agent={agent} />
       
       <group position={[0, 2.2, 0]}>
@@ -470,27 +532,26 @@ function AethelOSHeadquarters() {
         <RoundedBox args={[6, 4, 0.2]} radius={0.1} smoothness={4} castShadow>
           <meshStandardMaterial color="#1e293b" metalness={0.9} roughness={0.1} />
         </RoundedBox>
-        {/* Pantalla emisiva */}
-        <mesh position={[0, 0, 0.11]}>
-          <planeGeometry args={[5.8, 3.8]} />
-          <meshStandardMaterial color="#0c4a6e" emissive="#0284c7" emissiveIntensity={0.5} />
-        </mesh>
+        {/* Video emisor con Audio Espacial */}
+        <VideoScreen />
         
-        <Text position={[0, 1, 0.12]} fontSize={0.3} color="#ffffff" outlineWidth={0.01} outlineColor="#000000">
+        <Text position={[0, 1.4, 0.12]} fontSize={0.3} color="#ffffff" outlineWidth={0.01} outlineColor="#000000">
           AUSPICIADOR OFICIAL
         </Text>
-        <Text position={[0, 0.2, 0.12]} fontSize={0.5} color="#38bdf8" outlineWidth={0.02} outlineColor="#000000" maxWidth={5} textAlign="center">
+        <Text position={[0, 0.8, 0.12]} fontSize={0.5} color="#38bdf8" outlineWidth={0.02} outlineColor="#000000" maxWidth={5} textAlign="center" font="/fonts/space_age.ttf">
           QUALITY INFORMATIC SOLUTIONS SAC
         </Text>
         
         {/* Botón HTML interactivo sobre el modelo 3D */}
-        <Html position={[0, -1, 0.12]} transform scale={0.5}>
-          <button 
-            onClick={() => setMapOpen(!mapOpen)}
-            className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded border-2 border-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.6)] transition-all cursor-pointer pointer-events-auto"
-          >
-            🗺️ VER MAPA DEL DISTRITO PRIMUS
-          </button>
+        <Html position={[0, -1.2, 0.12]} transform scale={0.5}>
+          <div className="flex gap-4">
+            <button 
+              onClick={() => setMapOpen(!mapOpen)}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 px-4 rounded border-2 border-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.6)] transition-all cursor-pointer pointer-events-auto"
+            >
+              🗺️ VER MAPA DEL DISTRITO PRIMUS
+            </button>
+          </div>
         </Html>
         
         {/* Modal del mapa abierto */}

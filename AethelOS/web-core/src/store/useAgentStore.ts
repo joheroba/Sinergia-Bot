@@ -32,20 +32,21 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
   agents: {},
   
   fetchAgents: async () => {
-    const { data, error } = await supabase.from('aethel_agents').select('*');
+    // Obtenemos los agentes y el saldo de la compañía
+    const { data, error } = await supabase.from('agents').select('*, companies(iota_balance)');
+    
     let finalData = data;
 
     if (error || !data || data.length === 0) {
       console.warn('⚠️ Supabase no respondió o la tabla está vacía/protegida por RLS. Cargando Agentes de Respaldo Local...');
       // Fallback a los agentes base si falla la DB
       finalData = [
-        { agent_id: 'A-001', agent_name: 'Paul (Ventas)', operational_status: 'idle', current_action: 'Esperando clientes', iota_balance: 50, position: [-3, 0, -2], target_position: [-3, 0, -2], verified_skills: ['ventas', 'negociacion'] },
-        { agent_id: 'A-002', agent_name: 'Sophia (Marketing)', operational_status: 'active', current_action: 'Analizando métricas', iota_balance: 120, position: [4, 0, 3], target_position: [4, 0, 3], verified_skills: ['marketing', 'seo'] },
-        { agent_id: 'A-003', agent_name: 'Travis (Soporte)', operational_status: 'active', current_action: 'Monitoreando redes', iota_balance: 300, position: [-4, 0, 5], target_position: [-4, 0, 5], verified_skills: ['it', 'redes'] },
-        { agent_id: 'A-004', agent_name: 'Emma (RRHH)', operational_status: 'idle', current_action: 'Revisando perfiles', iota_balance: 80, position: [5, 0, -3], target_position: [5, 0, -3], verified_skills: ['rrhh', 'psicologia'] },
-        { agent_id: 'A-005', agent_name: 'Marcus (Finanzas)', operational_status: 'learning', current_action: 'Procesando balances', iota_balance: 900, position: [-6, 0, 0], target_position: [-6, 0, 0], verified_skills: ['finanzas', 'contabilidad'] },
-        { agent_id: 'A-006', agent_name: 'Elena (Operaciones)', operational_status: 'active', current_action: 'Optimizando rutas', iota_balance: 250, position: [6, 0, 0], target_position: [6, 0, 0], verified_skills: ['logistica', 'operaciones'] },
-        { agent_id: 'A-808', agent_name: 'GanoiBot', operational_status: 'active', current_action: 'Atendiendo consultas', iota_balance: 500, position: [0, 0, 1.5], target_position: [0, 0, 1.5], verified_skills: ['atencion', 'ventas_gano'] }
+        { id: 'A-001', custom_name: 'Paul (Ventas)', base_identity: 'Paul', operational_status: 'idle', companies: { iota_balance: 50 } },
+        { id: 'A-002', custom_name: 'Sophia (Marketing)', base_identity: 'Sophia', operational_status: 'active', companies: { iota_balance: 120 } },
+        { id: 'A-003', custom_name: 'Travis (Soporte)', base_identity: 'Travis', operational_status: 'active', companies: { iota_balance: 300 } },
+        { id: 'A-004', custom_name: 'Emma (RRHH)', base_identity: 'Emma', operational_status: 'idle', companies: { iota_balance: 80 } },
+        { id: 'A-005', custom_name: 'Marcus (Finanzas)', base_identity: 'Marcus', operational_status: 'learning', companies: { iota_balance: 900 } },
+        { id: 'A-006', custom_name: 'Elena (Operaciones)', base_identity: 'Elena', operational_status: 'active', companies: { iota_balance: 250 } },
       ];
     }
     
@@ -54,20 +55,25 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       finalData.forEach(dbAgent => {
         // Asignar posiciones base para los agentes
         let pos: [number, number, number] = [0, 0, 0];
-        if (dbAgent.agent_id === 'A-001') pos = [-3, 0, -2];
-        else if (dbAgent.agent_id === 'A-002') pos = [4, 0, 3];
-        else if (dbAgent.agent_id === 'A-003') pos = [-4, 0, 5];
-        else if (dbAgent.agent_id === 'A-004') pos = [5, 0, -3];
-        else if (dbAgent.agent_id === 'A-005') pos = [-6, 0, 0];
-        else if (dbAgent.agent_id === 'A-006') pos = [6, 0, 0];
+        if (dbAgent.base_identity === 'Paul') pos = [-3, 0, -2];
+        else if (dbAgent.base_identity === 'Sophia') pos = [4, 0, 3];
+        else if (dbAgent.base_identity === 'Travis') pos = [-4, 0, 5];
+        else if (dbAgent.base_identity === 'Emma') pos = [5, 0, -3];
+        else if (dbAgent.base_identity === 'Marcus') pos = [-6, 0, 0];
+        else if (dbAgent.base_identity === 'Elena') pos = [6, 0, 0];
         else pos = [(Math.random() * 10) - 5, 0, (Math.random() * 10) - 5];
 
-        agentsMap[dbAgent.agent_id] = {
-          ...dbAgent,
+        agentsMap[dbAgent.id] = {
+          agent_id: dbAgent.id,
+          agent_name: dbAgent.custom_name || dbAgent.base_identity,
+          operational_status: dbAgent.operational_status,
+          iota_balance: dbAgent.companies?.iota_balance || 0,
+          current_action: dbAgent.operational_status === 'idle' ? 'Esperando tareas' : 'Procesando...',
           position: pos,
           target_position: pos,
-          verified_skills: [],
-          agent_thought: 'Iniciando sistemas...'
+          verified_skills: [dbAgent.base_identity.toLowerCase()], // Habilidad basada en su identidad original
+          reputation_score: 100,
+          agent_thought: 'Iniciando sistemas conectando con Supabase...'
         };
       });
       set({ agents: agentsMap });
@@ -86,7 +92,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
         [id]: { ...state.agents[id], operational_status: status },
       },
     }));
-    await supabase.from('aethel_agents').update({ operational_status: status }).eq('agent_id', id);
+    await supabase.from('agents').update({ operational_status: status }).eq('id', id);
   },
 
   updateIotaBalance: async (id, balance) => {
@@ -96,7 +102,8 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
         [id]: { ...state.agents[id], iota_balance: balance },
       },
     }));
-    await supabase.from('aethel_agents').update({ iota_balance: balance }).eq('agent_id', id);
+    // En la nueva DB, el iota balance está en companies, omitimos su actualización directa aquí por ahora
+    // await supabase.from('companies').update({ iota_balance: balance }).eq('id', companyId);
   },
 
   triggerKillSwitch: async (id) => {
@@ -112,7 +119,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
         },
       },
     }));
-    await supabase.from('aethel_agents').update({ operational_status: 'emergency', current_action: 'SISTEMA CAÍDO' }).eq('agent_id', id);
+    await supabase.from('agents').update({ operational_status: 'emergency' }).eq('id', id);
   },
 
   globalKillSwitch: async () => {
@@ -125,7 +132,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       newAgents[key].target_position = newAgents[key].position;
     });
     set({ agents: newAgents });
-    await supabase.from('aethel_agents').update({ operational_status: 'emergency', current_action: 'SISTEMA CAÍDO' }).in('agent_id', Object.keys(agents));
+    await supabase.from('agents').update({ operational_status: 'emergency' }).in('id', Object.keys(agents));
   },
 
   setAgentThought: (id, thought) => 
