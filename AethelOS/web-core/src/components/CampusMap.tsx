@@ -1,6 +1,6 @@
 import { Suspense, useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Text, Html, useGLTF, useAnimations, Billboard, RoundedBox, PositionalAudio } from '@react-three/drei';
+import { OrbitControls, Text, Html, useGLTF, useAnimations, Billboard, RoundedBox, PositionalAudio, Icosahedron } from '@react-three/drei';
 import { Physics, RigidBody, CuboidCollider, CapsuleCollider } from '@react-three/rapier';
 import { useAgentStore, AgentDNA } from '@/store/useAgentStore';
 import { useInspectorStore } from '@/store/useInspectorStore';
@@ -486,8 +486,70 @@ function InspectorUI() {
   );
 }
 
+function HolographicLogo() {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const [hovered, setHovered] = useState(false);
+  const setDossierOpen = useAgentStore(state => state.setDossierOpen);
+
+  useFrame((state, delta) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y += delta;
+      meshRef.current.rotation.x += delta * 0.5;
+      meshRef.current.position.y = 2.5 + Math.sin(state.clock.elapsedTime * 2) * 0.2;
+    }
+  });
+
+  useEffect(() => {
+    document.body.style.cursor = hovered ? 'pointer' : 'auto';
+  }, [hovered]);
+
+  return (
+    <group 
+      position={[0, 2.5, -5]} 
+      onClick={(e) => { e.stopPropagation(); setDossierOpen(true); }}
+      onPointerOver={(e) => { e.stopPropagation(); setHovered(true); }}
+      onPointerOut={() => setHovered(false)}
+    >
+      <Icosahedron ref={meshRef as any} args={[0.5, 1]} castShadow>
+        <meshPhysicalMaterial 
+          color="#38bdf8" 
+          emissive={hovered ? "#38bdf8" : "#0284c7"} 
+          emissiveIntensity={hovered ? 2 : 0.8}
+          wireframe={true}
+          transparent={true}
+          opacity={0.8}
+        />
+      </Icosahedron>
+      <pointLight color="#38bdf8" intensity={hovered ? 10 : 2} distance={3} />
+      <Billboard position={[0, -0.8, 0]}>
+        <Text fontSize={0.15} color="#ffffff" outlineWidth={0.01} outlineColor="#000000" font="/fonts/space_age.ttf">
+          {hovered ? "> TOCA PARA ABRIR DOSSIER <" : "HIVE MIND CENTRAL"}
+        </Text>
+      </Billboard>
+    </group>
+  );
+}
+
 function AethelOSHeadquarters() {
   const [mapOpen, setMapOpen] = useState(false);
+
+  const sponsors = [
+    "AETHEL OS",
+    "QUALITY INFORMATIC SOLUTIONS",
+    "JOHEROBA IMPORT",
+    "KAIROS TRADER",
+    "GANOI BOT",
+    "EVOTE SHIELD",
+    "CIRCULO DORADO"
+  ];
+  const [currentSponsorIndex, setCurrentSponsorIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSponsorIndex((prev) => (prev + 1) % sponsors.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <group position={[0, -0.98, 0]}>
@@ -515,6 +577,9 @@ function AethelOSHeadquarters() {
         </Billboard>
       </group>
 
+      {/* Holograma Interactivo del Logo */}
+      <HolographicLogo />
+
       {/* Cartel principal de AethelOS */}
       <Billboard position={[0, 8, -15]}>
         <Text fontSize={2.5} color="#ffffff" outlineWidth={0.1} outlineColor="#000000">
@@ -538,7 +603,7 @@ function AethelOSHeadquarters() {
           AUSPICIADOR OFICIAL
         </Text>
         <Text position={[0, 0.8, 0.12]} fontSize={0.5} color="#38bdf8" outlineWidth={0.02} outlineColor="#000000" maxWidth={5} textAlign="center" font="/fonts/space_age.ttf">
-          QUALITY INFORMATIC SOLUTIONS SAC
+          {sponsors[currentSponsorIndex]}
         </Text>
         
         {/* Botón HTML interactivo sobre el modelo 3D */}

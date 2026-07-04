@@ -26,10 +26,15 @@ interface AgentStore {
   globalKillSwitch: () => Promise<void>;
   simulateTick: () => void;
   setAgentThought: (id: string, thought: string) => void;
+  // UI State
+  isDossierOpen: boolean;
+  setDossierOpen: (open: boolean) => void;
 }
 
 export const useAgentStore = create<AgentStore>((set, get) => ({
   agents: {},
+  isDossierOpen: false,
+  setDossierOpen: (open) => set({ isDossierOpen: open }),
   
   fetchAgents: async () => {
     // Obtenemos los agentes y el saldo de la compañía
